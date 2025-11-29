@@ -12,13 +12,6 @@ open TypeInference
 
 exception RuntimeError of string * term;;
 
-(** wrapper sobre `typeinfer` para obter o tipo de um termo *)
-let typeof (e: term) : string = 
-    match typeinfer e [] with
-    | Ok t -> string_of_tipo t
-    | Error exn -> string_of_exn exn
-;;
-
 let is_value (e: term) : bool = match e with
     | Integer _ -> true
     | Boolean _ -> true
@@ -27,100 +20,294 @@ let is_value (e: term) : bool = match e with
 and is_bool (e: term) : bool = match e with
     | Boolean b -> true
     | _         -> false
-and value_of_term (e: term) : value = match e with
-    | Integer n -> VInteger n
-    | Boolean b -> VBoolean b
-    | Unit      -> VUnit
-    | _ -> failwith "not a value"
-and term_of_value (v: value) : term = match v with
-    | VInteger n -> Integer n
-    | VBoolean b -> Boolean b
-    | VUnit      -> Unit
-    | _ -> failwith "not a term"
+and value_of_term (e: term) : value option = match e with
+    | Integer n -> Some (VInteger n)
+    | Boolean b -> Some (VBoolean b)
+    | Unit      -> Some (VUnit)
+    | _         -> None
+and term_of_value (v: value) : term option = match v with
+    | VInteger n -> Some (Integer n)
+    | VBoolean b -> Some (Boolean b)
+    | VUnit      -> Some (Unit)
+    | _          -> None
 ;;
 
-(** faz um passo, se possível, na avaliação de um termo *)
-let rec step (e: term) (ctx: env) : term = (match e with
-    (** valores *) 
-    | Integer _ -> e
-    | Boolean _ -> e
-    | Unit      -> e
 
-    (* if(e1, e2, e3) *)
-    | Conditional (e1, e2, e3) ->
-        if not (is_value e1) then (
-            let e1' = step e1 ctx in
-            if (e1' = e1) then raise (RuntimeError ("não foi possivel avaliar a expressão 'if'.", e))
-            else step (Conditional (e1', e2, e3)) ctx
-        ) else (
-            let b = is_bool e1 in
-            if b then step e2 ctx
-            else step e3 ctx
-        )
+(** memória: (location * identifier * value) list *)
+type memory = (int * string * value) list;;
 
-    (** operações binárias *)
-    | BinaryOperation (bop, e1, e2) ->
-        if not (is_value e1) then (
-            let e1' = step e1 ctx in
-            if (e1' = e1) then raise (RuntimeError ("não foi possivel avaliar a expressão '" ^ string_of_term e ^ "'.", e))
-            else step (BinaryOperation (bop, e1', e2)) ctx
-        ) else (
-            if not (is_value e2) then (
-                let e2' = step e2 ctx in
-                if (e2' = e2) then raise (RuntimeError ("não foi possivel avaliar a expressão '" ^ string_of_term e ^ "'.", e))
-                else step (BinaryOperation (bop, e1, e2')) ctx
-            ) else (
-                let v1 = value_of_term e1 in
-                let v2 = value_of_term e2 in
-                match (v1, v2, bop) with
-                (* op. bin. aritméticas *)
-                | (VInteger n1, VInteger n2, Add) -> Integer (n1 + n2)
-                | (VInteger n1, VInteger n2, Sub) -> Integer (n1 - n2)
-                | (VInteger n1, VInteger n2, Mul) -> Integer (n1 * n2)
-                | (VInteger n1, VInteger n2, Div) -> (
-                    if n2 = 0 then raise (RuntimeError ("divisão por zero.", e))
-                    else Integer (n1 / n2)
-                )
+(** dada uma memória `mem` e um identificador `x`,
+    retorna o valor associado ao identificador `x`, se houver. *)
+let rec lookup (x: string) (mem: memory) : value option = match mem with
+    | [] -> None
+    | (l, y, v) :: mem -> if x = y then Some v else lookup x mem
+;;
 
-                (* op. bin. relacionais aritméticas *)
-                | (VInteger n1, VInteger n2, Eq) -> Boolean (n1 = n2)
-                | (VInteger n1, VInteger n2, Neq) -> Boolean (n1 <> n2)
-                | (VInteger n1, VInteger n2, Lt) -> Boolean (n1 < n2)
-                | (VInteger n1, VInteger n2, Leq) -> Boolean (n1 <= n2)
+(** dada uma memória de triplas 1-indexada (l, _, _)
+    ordena as triplas em ordem crescente de `l`. 
+*)
+let rec sort (mem: memory) : memory = match mem with
+    | [] -> []
+    | (l, x, v) :: mem -> (l, x, v) :: sort (List.filter (fun (l', _, _) -> l' > l) mem)
+;;
 
-                (* op. bin. lógicas *)
-                | (VBoolean b1, VBoolean b2, And) -> Boolean (b1 && b2)
-                | (VBoolean b1, VBoolean b2, Or) -> Boolean (b1 || b2)
-                | _ -> raise (RuntimeError ("tipos inválidos para a expressão '" ^ string_of_term e ^ "'.", e))
-            )
-        )
+(** dada uma memória `mem`, um identificador `x` e um valor `v`,
+    atualiza a tripla `(l, x, v)` na memória `mem`, se `x` estiver em `mem`,
+    ou adiciona uma nova tripla com uma nova localização. *)
+let put (x: string) (v: value) (mem: memory) : memory =
+    (* tenta atualizar *)
+    let rec update mem =
+        match mem with
+            | [] -> None
+            | (l, y, vy) :: mem' ->
+                if x = y then
+                    Some ((l, x, v) :: mem')
+                else
+                    match update mem' with
+                    | Some mem'' -> Some ((l, y, vy) :: mem'')
+                    | None -> None
+    in
+        match update mem with
+        | Some mem_updated ->
+            mem_updated
+        | None ->
+            (* não existia: aloca nova localização *)
+            let next_loc =
+                List.fold_left (fun acc (l,_,_) -> max acc l) 0 mem + 1
+            in
+            (next_loc, x, v) :: mem
+let string_of_mem (mem: memory) : string = 
+    let rec string_of_mem' (mem: memory) : string = match mem with
+        | [] -> ""
+        | (l, x, v) :: mem -> "(" ^ string_of_int l ^ ", " ^ x ^ ", " ^ string_of_value v ^ ") " ^ string_of_mem' mem
+    in "[" ^ string_of_mem' (sort mem) ^ "]"
+;;
+
+(** faz um passo, se possível, na avaliação de um termo `e` sobre uma memória `mem` em L2. *)
+let rec step (e: term) (mem: memory) : (term * memory) option = match e with
+    (** n, número inteiro *)
+    | Integer n -> Some (Integer n, mem)
     
-    (* sequência, e1; e2 *)
-    | Sequence (e1, e2) -> (
-        (** se (e1 ->* v1 & v1 : Unit) então (e1; e2 -> e2) *)
+    (** b, booleano *)
+    | Boolean b -> Some (Boolean b, mem)
 
+    (** x, identificador *)
+    | Identifier x -> (match lookup x mem with
+        (** se `x` estiver em `mem`, retorne `Some (v, mem)` com `v` o valor associado a `x` *)
+        | Some v -> (match term_of_value v with
+            | Some t -> Some (t, mem)
+            | None -> None)
+
+        (** senão, retorne `None` *)
+        | None -> None
+    )
+
+    (** if e1 then e2 else e3, operador condicional *)
+    | Conditional (e1, e2, e3) -> (
+        (** e1 -> e1' => if(e1, e2, e3) -> if(e1', e2, e3) *)
         if not (is_value e1) then (
-            let e1' = step e1 ctx in
-            
-            (** se (e1 -/> e1') e (is_value(e1) = false) então e1 é uma forma normal inválida (erro) *)
-            if (e1' = e1) then raise (RuntimeError ("forma normal invalida: '" ^ string_of_term e ^ "'.", e))
-            
-            (** e1 -> e1' *)
-            else step (Sequence (e1', e2)) ctx
-        ) else (
-            (** (e1 -/> e1') e (is_value(e1) = true) => e1 = v1 *)
-            let v1 = value_of_term e1 in
+            match step e1 mem with
+            | Some (e1', mem') -> Some (Conditional (e1', e2, e3), mem')
+            | None -> None
+        ) else (match (typeinfer e1 []) with
+            (** v1: Bool *)
+            | Bool -> (
+                (** v1: Bool = true => if(e1, e2, e3) -> e2 *)
+                if (e1 = Boolean true) then Some (e2, mem)
 
-            (** se (v1 !: Unit) então (v1; e2 -> Erro) *)
-            if not (v1 = VUnit) then raise (RuntimeError ("o tipo da expressão 'e1' deve ser unit, mas foi " ^ string_of_value v1 ^ " em '" ^ string_of_term e ^ "'.", e))
+                (** v1: Bool = false => if(e1, e2, e3) -> e3 *)                        
+                else Some (e3, mem)
+            )
+
+            (** v1 !: Bool*)
+            | _ -> None
+        )
+    )
+
+    (** op. binárias *)
+    | BinaryOperation (op, e1, e2) -> (
+        (** e1 -> e1' => op(e1, e2) -> op(e1', e2) *)
+        if not (is_value e1) then
+            (match step e1 mem with
+                | Some (e1', mem') -> Some (BinaryOperation (op, e1', e2), mem')
+                | None -> None)
             
-            (** v1; e2 -> e2 *)
-            else step e2 ctx
+        (** v1, e2 -> e2' => op(v1, e2) -> op(v1, e2') *)
+        else if (is_value e1 && not (is_value e2)) then (
+            match step e2 mem with
+            | Some (e2', mem') -> Some (BinaryOperation (op, e1, e2'), mem')
+            | None -> None
+        
+        (** redundante, confirmatório *)
+        (** v1, v2 => op(v1, v2) -> v *)
+        ) else (match (value_of_term e1, value_of_term e2) with
+            | (Some v1, Some v2) -> (match (op, v1, v2) with
+                (** op. binárias aritméticas *)
+                | (Add, VInteger n1, VInteger n2) -> Some (Integer (n1 + n2), mem)
+                | (Sub, VInteger n1, VInteger n2) -> Some (Integer (n1 - n2), mem)
+                | (Mul, VInteger n1, VInteger n2) -> Some (Integer (n1 * n2), mem)
+                | (Div, VInteger n1, VInteger n2) -> if n2 = 0 then None else Some (Integer (n1 / n2), mem)
+
+                (** op. binárias aritméticas relacionais *)
+                | (Eq, VInteger n1, VInteger n2) -> Some (Boolean (n1 = n2), mem)
+                | (Neq, VInteger n1, VInteger n2) -> Some (Boolean (n1 <> n2), mem)
+                | (Lt, VInteger n1, VInteger n2) -> Some (Boolean (n1 < n2), mem)
+                | (Leq, VInteger n1, VInteger n2) -> Some (Boolean (n1 <= n2), mem)
+                | (Gt, VInteger n1, VInteger n2) -> Some (Boolean (n1 > n2), mem)
+                | (Geq, VInteger n1, VInteger n2) -> Some (Boolean (n1 >= n2), mem)
+
+                (** op. binárias lógicas *)
+                | (And, VBoolean b1, VBoolean b2) -> Some (Boolean (b1 && b2), mem)
+                | (Or, VBoolean b1, VBoolean b2) -> Some (Boolean (b1 || b2), mem)
+
+                (** erro *)
+                | _ -> None)
+
+            (** erro *)
+            | _ -> None
         )
     )
     
-    | _ -> raise (RuntimeError ("não foi possivel avaliar a expressão " ^ string_of_term e ^ ".", e))
-) 
-and stepn (e: term) (ctx: env) (n: int) : term = if n = 0 then e else stepn (step e ctx) ctx (n - 1)
-and evaluate (e: term) : term = stepn e [] 1000
+        (** while e1 do e2 *)
+        | While (e1, e2) -> (
+            (** e1 -> e1' => while(e1, e2) -> while(e1', e2) *)
+            if not (is_value e1) then (
+                match step e1 mem with
+                | Some (e1', mem') -> Some (While (e1', e2), mem')
+                | None -> None
+            ) else (
+                (* e1 é valor: deve ser Boolean true/false *)
+                match e1 with
+                | Boolean true ->
+                    (* while true do e2 -> e2; while e1 do e2  (re-evalua a condição depois de e2) *)
+                    Some (Sequence (e2, While (e1, e2)), mem)
+                | Boolean false ->
+                    (* while false do e2 -> unit *)
+                    Some (Unit, mem)
+                | _ ->
+                    (* condição não-booleano *)
+                    None
+            )
+        )
+    
+        (** x := e1 *)
+        | Assignment (x, e1) -> (
+            if not (is_value e1) then (
+                match step e1 mem with
+                | Some (e1', mem') -> Some (Assignment (x, e1'), mem')
+                | None -> None
+            ) else (
+                match x with
+                | Identifier name -> (
+                    match value_of_term e1 with
+                    | Some v ->
+                        let mem' = put name v mem in
+                        Some (Unit, mem')
+                    | None ->
+                        None
+                )
+                | _ ->
+                    None
+            )
+        )
+    
+        (** let x: t = e1 in e2 *)
+        | Let (x, t, e1, e2) -> (
+            (** e1 -> e1' => let x: t = e1 in e2 -> let x: t = e1' in e2 *)
+            if not (is_value e1) then (
+                match step e1 mem with
+                | Some (e1', mem') -> Some (Let (x, t, e1', e2), mem')
+                | None -> None
+            ) else (
+                match value_of_term e1 with
+                | Some v ->
+                    let mem' = put x v mem in
+                    Some (e2, mem')
+                | None -> None
+            )
+        )
+    
+        (** new e1 *)
+        | New e1 -> (
+            if not (is_value e1) then (
+                match step e1 mem with
+                | Some (e1', mem') -> Some (New e1', mem')
+                | None -> None
+            ) else (
+                match value_of_term e1 with
+                | Some v ->
+                    let next_loc =
+                        List.fold_left (fun acc (l,_,_) -> max acc l) 0 mem + 1
+                    in
+                    let loc_name = "loc_" ^ string_of_int next_loc in
+                    let mem' = (next_loc, loc_name, v) :: mem in
+                    Some (Identifier loc_name, mem')
+                | None -> None
+            )
+        )
+    
+        (** !e1 *)
+        | Derefence e1 -> (
+            if not (is_value e1) then
+                match step e1 mem with
+                | Some (e1', mem') -> Some (Derefence e1', mem')
+                | None -> None
+            else
+                match e1 with
+                | Identifier name -> (
+                    match lookup name mem with
+                    | Some v -> (
+                        match term_of_value v with
+                        | Some t -> Some (t, mem)
+                        | None -> None
+                    )
+                    | None -> None
+                )
+                | _ -> None
+        )
+        
+    
+
+    (** () *)
+    | Unit -> Some (Unit, mem)
+    | Sequence (e1, e2) -> (
+        (** e1 -> e1' => e1; e2 -> e1'; e2 *)
+        if not (is_value e1) then (
+            match step e1 mem with
+            | Some (e1', mem') -> Some (Sequence (e1', e2), mem')
+            | None -> None
+        ) else (
+            (* e1 é valor; deve ser Unit para prosseguir *)
+            match e1 with
+            | Unit -> Some (e2, mem)
+            | _ -> None
+        )
+    )
+
+    | _ -> failwith "NotImplemented"
 ;;
+
+(** operador ->* sobre um termo `e` em L2. *)
+let rec step_star (e: term) (mem: memory) : (term * memory) option = match step e mem with
+    | Some (e', mem') when not (is_value e') -> step_star e' mem'
+    | Some (e', mem') -> Some (e', mem')
+    | None -> Some (e, mem)
+;;
+
+(** operador ->* imperativo *)
+let stepn (e: term) (n: int) : (term * memory) =
+    let rec stepn' (e: term) (n: int) (mem: memory) : (term * memory) = match n with
+        | 0 -> (e, mem)
+        | _ -> (match step e mem with
+            | Some (e', mem') -> stepn' e' (n - 1) mem'
+            | None -> (e, mem))
+    in stepn' e n []
+;;
+
+let evaluate (e: term) (mem: memory) : (value * memory) option = match step_star e mem with
+    | Some (e', mem') -> (match value_of_term e' with
+        | Some v -> Some (v, mem')
+        | None -> None)
+    | None -> None
+;;
+

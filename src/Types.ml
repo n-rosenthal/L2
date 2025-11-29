@@ -5,26 +5,38 @@
 *)
 
 (** Sistema de tipos de L2 *)
-type  tipo =
+type tipo   = ..;;
+
+(** O sistema de tipos é declarado extensível pois, em `typeinfer.ml`,
+será definido o tipo-erro para a inferência de tipos.*)
+type  tipo  +=
     | Unit                    (* unit *)
     | Int                     (* número inteiro *)
     | Bool                    (* booleano *)
-    (**
-    | Ref of tipo             (* tipo referência *)
-    | Arrow of tipo * tipo    (* tipo função *)
-    | Product of tipo * tipo  (* tipo produto *)
-    *)
+    | Reference of tipo       (* referência de tipos *)
 ;;
 
-(** repr. string de um tipo *)
-let rec string_of_tipo t =
-    match t with
-    | Unit -> "unit"
-    | Int -> "int"
-    | Bool -> "bool"
-    (**
-    | Ref t -> "ref " ^ string_of_tipo t
-    | Arrow (t1, t2) -> string_of_tipo t1 ^ " -> " ^ string_of_tipo t2
-    | Product (t1, t2) -> string_of_tipo t1 ^ " * " ^ string_of_tipo t2
-    *)
+
+
+(**
+    A inferência estática de tipos extende o sistema de tipos de `L2`
+    para incluir um tipo erro, `ErrorType`. Isso garante a totalidade
+    ou completude trivial do algoritmo: para todo termo `e`, `typeinfer e`
+    retornará um tipo. Isto é diferente do que dizer que se `e` é tipável,
+    então `typeinfer e` será capaz de derivar o tipo de `e`.
+
+    `ErrorType` não deve ser um tipo acessível ao programador.
+**)
+type tipo += 
+    | ErrorType of string;;
+
+
+(** repr. string de um tipo*)
+let rec string_of_tipo (t: tipo) : string = match t with
+    | Unit          -> "unit"
+    | Int           -> "int"
+    | Bool          -> "bool"
+    | Reference t   -> "ref " ^ string_of_tipo t
+    | ErrorType s   -> "[TypeError] " ^ s
+    | _             -> "unknown"
 ;;
