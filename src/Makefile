@@ -1,7 +1,7 @@
 OCAMLC=ocamlc
 OCAMLFLAGS=-g
 LIBS=str.cma
-SOURCES=  Types.ml Terms.ml TypeInference.ml Evaluation.ml Interpreter.ml Testing.ml main.ml
+SOURCES=Types.ml Terms.ml Constructions.ml Representations.ml TypeInference.ml Evaluation.ml Interpreter.ml Testing.ml main.ml
 OBJECTS=$(SOURCES:.ml=.cmo)
 EXEC=main
 

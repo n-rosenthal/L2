@@ -4,10 +4,10 @@
     Testes unitários para o interpretador de L2
 *)
 
-open Types
-open Terms
-open TypeInference
-open Evaluation
+open Types          (*  tipos da linguagem `L2` *)
+open Terms          (*  sintaxe de termos sobre `L2` *)
+open TypeInference  (*  inferência estática de tipos para `L2` *)
+open Evaluation     (*  avaliação de termos para `L2` *)
 
 
 let assert_tipo (e: term) (t: tipo) : bool = eq_tipo (typeinfer e []) t;;
@@ -112,6 +112,29 @@ let binary_operations: term list = [
         ;;
         
 
+(**
+    let cndwhi = Binop(Gt, Deref (Id "z"),Num 0)
+let asgny = Asg(Id "y", Binop(Mul, Deref (Id "y"),Deref(Id "z")))
+let asgnz = Asg(Id "z", Binop(Sub, Deref (Id "z"),Num 1))
+let bdwhi = Seq(asgny, asgnz) 
+let whi = Wh(cndwhi, bdwhi)
+let prt = Deref (Id "y")
+let seq = Seq(whi, prt)
+    
+let fat = Let("x", TyInt, Num 5, 
+              Let("z", TyRef TyInt, New (Id "x"), 
+                  Let("y", TyRef TyInt, New (Num 1),
+                      seq)))
+*)
+
+let asgny: term = Assignment (Identifier "y", BinaryOperation (Mul, Derefence (Identifier "y"), Derefence (Identifier "z")));;
+let asgnz: term = Assignment (Identifier "z", BinaryOperation (Sub, Derefence (Identifier "z"), Integer 1));;
+let bdwhi: term = Sequence (asgny, asgnz);;
+let whi: term = While (BinaryOperation (Gt, Derefence (Identifier "z"), Integer 0), bdwhi);;
+let prt: term = Derefence (Identifier "y");;
+let seq: term = Sequence (whi, prt);;
+let fat: term = Let ("x", Int, Integer 5, Let ("z", Reference Int, New (Identifier "x"), Let ("y", Reference Int, New (Integer 1), seq)));;
+
 let programs: term list = [
-  fatorial;
-];
+  fatorial; fat
+];;

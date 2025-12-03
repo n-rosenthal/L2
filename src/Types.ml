@@ -16,7 +16,11 @@ type  tipo  +=
     | Reference of tipo       (* referência de tipos *)
 ;;
 
-
+let rec eq_tipo (t1: tipo) (t2: tipo) : bool = match t1, t2 with
+    | Unit, Unit | Int, Int | Bool, Bool -> true
+    | Reference t1, Reference t2 -> eq_tipo t1 t2
+    | _ -> false
+;;
 
 (**
     A inferência estática de tipos extende o sistema de tipos de `L2`
@@ -29,14 +33,3 @@ type  tipo  +=
 **)
 type tipo += 
     | ErrorType of string;;
-
-
-(** repr. string de um tipo*)
-let rec string_of_tipo (t: tipo) : string = match t with
-    | Unit          -> "unit"
-    | Int           -> "int"
-    | Bool          -> "bool"
-    | Reference t   -> "ref " ^ string_of_tipo t
-    | ErrorType s   -> "[TypeError] " ^ s
-    | _             -> "unknown"
-;;

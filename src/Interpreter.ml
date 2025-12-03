@@ -1,34 +1,130 @@
 (**
-    `src/Interpreter.ml`
-    
-    Interpretador para a linguagem `L2`
+    src/Interpreter.ml
+
+    High-level interpreter for the L2 language.
+    Orchestrates:
+      - type inference
+      - evaluation
+      - pretty-printing
 *)
 
+open Types
+open Terms
+open Constructions
+open Representations
 open Evaluation
 open TypeInference
-open Terms
-open Types
 
-(** dado um termo `e`, interpreta `e`, retornando uma tripla `(valor, tipo, memoria)`*)
-let interpret (e: term) : (value * tipo * memory) = (match evaluate e [] with
-    | Some (v, mem) -> (v, typeinfer e [], mem)
-    | None -> (Error "RuntimeError", typeinfer e [], []))
-;;
 
-  (** interpretador para L2 *)
-let interpreter (e: term) : unit = (match interpret e with
-    | (Error s, _, _) -> (
-        print_endline (ast_of_term e);
-        print_endline (string_of_term e);
-        print_endline ("\t :" ^ string_of_tipo (typeinfer e []));
-        print_endline ("\t não é possível avaliar o termo em L2");
-    )
+(* -------------------------------------------------------------------------- *)
+(* Helpers for printing                                                       *)
+(* -------------------------------------------------------------------------- *)
+
+let section title =
+  print_endline ("--- " ^ title ^ " ---")
+
+let print_line s = print_endline ("  " ^ s)
+let print_raw  s = print_endline s
+
+
+(* -------------------------------------------------------------------------- *)
+(* Pretty printing for a full interpretation                                  *)
+(* -------------------------------------------------------------------------- *)
+
+let print_interpretation
+      (e        : term)
+      (t        : tipo)
+      (rules    : type_inference)
+      (v        : value)
+      (mem      : memory)
+      (ev_trace : evaluation)
+    : unit =
+begin
+  section "Source";
+  print_raw (string_of_term e);
+
+  section "AST";
+  print_raw (ast_of_term e);
+
+  section "Type";
+  print_raw (": " ^ string_of_tipo t);
+
+  if rules <> [] then begin
+    section "Type Derivation";
+    print_raw (string_of_type_inference rules)
+  end;
+
+  section "Result Value";
+  print_raw ("= " ^ string_of_value v);
+
+  section "Evaluation Trace";
+  print_raw (string_of_evaluation ev_trace);
+
+  if mem <> [] then begin
+    section "Final Memory";
+    print_raw (string_of_mem mem)
+  end;
+
+  print_endline "------------------------------------------"
+end
+
+
+(* -------------------------------------------------------------------------- *)
+(* Type inference only: pretty output                                         *)
+(* -------------------------------------------------------------------------- *)
+
+let print_just_typeinfer (e : term) (t : tipo) (rules : type_inference) : unit =
+begin
+  section "Source";
+  print_raw (string_of_term e);
+
+  section "AST";
+  print_raw (ast_of_term e);
+
+  section "Type";
+  print_raw (": " ^ string_of_tipo t);
+
+  if rules <> [] then begin
+    section "Type Derivation";
+    print_raw (string_of_type_inference rules)
+  end;
+
+  print_endline "------------------------------------------"
+end
+
+
+(* -------------------------------------------------------------------------- *)
+(*Full interpretation: performs type inference then evaluation                *)
+(* -------------------------------------------------------------------------- *)
+
+let interpret (e : term) : unit =
+  let (t, t_rules) = infer e in
+  match t with
+  | ErrorType msg ->
+      (* Type error: don't try to evaluate *)
+      section "Type Error";
+      print_raw msg;
+      print_line "Evaluation skipped.";
+      print_endline "------------------------------------------"
+
+      | _ ->
+        (* Successfully typed: evaluate term *)
+        begin
+          match multi_step e [] 100 with
+          | Error msg ->
+              (* dynamic evaluation error *)
+              section "Evaluation Error";
+              print_raw msg;
+              print_endline "------------------------------------------"
     
-    | (v, t, mem) -> (
-        print_endline (ast_of_term e);
-        print_endline (string_of_term e);
-        print_endline ("\t :" ^ string_of_tipo t);
-        print_endline ("\t = " ^ string_of_value v);
-        print_endline ("\t in " ^ string_of_mem mem))
-    )
-;;
+          | Ok (final_t, mem, ev_trace) ->
+              (* convert final term to value and print everything *)
+              let v = value_of_term final_t in (match v with
+                | None ->
+                    (* runtime error value returned (EvaluationError) *)
+                    section "Runtime Error";
+                    print_endline "------------------------------------------"
+                | Some v ->
+                    print_interpretation e t t_rules v mem ev_trace
+              )
+        end

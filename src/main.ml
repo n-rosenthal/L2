@@ -14,7 +14,7 @@ let _ =
        print_int i;
        print_string ". ";
        print_endline "------------------------------------";
-       interpreter e;
+       interpret e;
        print_endline "")
     all_tests
 ;;
