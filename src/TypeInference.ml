@@ -89,7 +89,7 @@ let rec typeinfer (e: term) (env: ambiente) : tipo = (match e with
     )
 
     (** !e *)
-    | Derefence e -> (match typeinfer e env with
+    | Dereference e -> (match typeinfer e env with
         | Reference t -> t
         | t -> ErrorType ("O tipo de e em um Derefence(e) deve ser Reference(t), mas foi \"" ^ ast_of_term e ^ "\": " ^ string_of_tipo t ^ "\n\t[" ^ string_of_env env ^ "]")
     )
@@ -311,7 +311,7 @@ let infer (e: term) : tipo * type_inference = (
                 } :: r')
         )
 
-        | Derefence e -> (
+        | Dereference e -> (
             let t, env', r' = infer' e env r in
             (match t with
                 | Reference t -> (t, env', {

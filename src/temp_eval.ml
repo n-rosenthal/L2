@@ -3,7 +3,7 @@
             (* Identifier: fetch the value bound to the identifier in memory.
                If present, replace identifier by the term-of-value.
                If the identifier is not bound -> runtime error (stuck). *)
-            | Identifier x ->
+            X| Identifier x ->
                 (match loc_of_identifier mem x with
                  | None ->
                      let msg = "unbound identifier '" ^ x ^ "' in memory" in
@@ -31,7 +31,7 @@
             se o primeiro termo (e1) não for um valor, avalie-o até que seja
             se o segundo termo (e2) não for um valor, avalie-o até que seja 
             quando ambos termos forem valores, tente fazer a operação binária *)
-        | BinaryOperation (op, e1, e2) ->
+        X| BinaryOperation (op, e1, e2) ->
             (** se `e1` não for um valor, isto é, se for possível dar um passo e1 -> e1', então tente dar um passo. *)
             if not (is_value_term e1) then
                 (match step e1 mem with
@@ -89,7 +89,7 @@
                 se e1 for falso     , então retorne e3
                 [se e1 for um valor não booleano, erro]
                 *)
-            | Conditional (e1, e2, e3) ->
+            X| Conditional (e1, e2, e3) ->
                 (** e1 -> e1' => if(e1, e2, e3) -> if(e1', e2, e3) *)
                 if not (is_value_term e1) then
                     (match step e1 mem with
@@ -130,7 +130,7 @@
             (** while e1 do e2
                 comando while é avaliado expandindo-o para um if com e1, e2 e Unit
                  While -> expands to conditional with recursion (small-step encoding) *)
-            | While (e1, e2) ->
+            X| While (e1, e2) ->
                 let expanded = Conditional (e1, Sequence (e2, While (e1, e2)), Unit) in
                 Ok (expanded,
                     mem, 
@@ -311,7 +311,7 @@
             Sequência
             `e1` deve ser avaliado até que se torne Unit.
             Quando `e1` = Unit, então `Sequence (Unit, e2)` é avaliado para `e2` *)
-            | Sequence (e1, e2) ->
+            X| Sequence (e1, e2) ->
                 (** se `e1` não for um valor, avalie-o até que seja *)
                 if not (is_value_term e1) then
                     (match step e1 mem with

@@ -94,7 +94,7 @@ let rec string_of_term ?(lvl=0) e =
         | New e ->
             indent lvl ^ "new\n" ^ string_of_term ~lvl:(lvl+1) e
 
-        | Derefence e ->
+        | Dereference e ->
             indent lvl ^ "!" ^ string_of_term e
 
         | Sequence (e1, e2) ->
@@ -120,7 +120,7 @@ let rec ast_of_term (e: term) : string = (match e with
     | Assignment (l, r) -> "(Assignment (" ^ ast_of_term l ^ ", " ^ ast_of_term r ^ "))"
     | Let (s, t, a, b) -> "(Let (" ^ s ^ ", " ^ string_of_tipo t ^ ", " ^ ast_of_term a ^ ", " ^ ast_of_term b ^ "))"
     | New a -> "(New (" ^ ast_of_term a ^ "))"
-    | Derefence a -> "(Derefence (" ^ ast_of_term a ^ "))"
+    | Dereference a -> "(Derefence (" ^ ast_of_term a ^ "))"
     | Sequence (a, b) -> "(Sequence (" ^ ast_of_term a ^ ", " ^ ast_of_term b ^ "))"
 )
 

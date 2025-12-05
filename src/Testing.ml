@@ -83,7 +83,7 @@ let binary_operations: term list = [
                   While (
                     BinaryOperation
                       (Gt,
-                        Derefence (Identifier "z"),
+                      Dereference (Identifier "z"),
                         Integer 0),
         
                     Sequence (
@@ -91,20 +91,20 @@ let binary_operations: term list = [
                         Identifier "y",
                         BinaryOperation
                           (Mul,
-                            Derefence (Identifier "y"),
-                            Derefence (Identifier "z"))
+                          Dereference (Identifier "y"),
+                          Dereference (Identifier "z"))
                       ),
         
                       Assignment (
                         Identifier "z",
                         BinaryOperation
                           (Sub,
-                            Derefence (Identifier "z"),
+                          Dereference (Identifier "z"),
                             Integer 1))
                     )
                   ),
         
-                  Derefence (Identifier "y")
+                  Dereference (Identifier "y")
                 )
               )
             )
@@ -127,11 +127,11 @@ let fat = Let("x", TyInt, Num 5,
                       seq)))
 *)
 
-let asgny: term = Assignment (Identifier "y", BinaryOperation (Mul, Derefence (Identifier "y"), Derefence (Identifier "z")));;
-let asgnz: term = Assignment (Identifier "z", BinaryOperation (Sub, Derefence (Identifier "z"), Integer 1));;
+let asgny: term = Assignment (Identifier "y", BinaryOperation (Mul, Dereference (Identifier "y"), Dereference (Identifier "z")));;
+let asgnz: term = Assignment (Identifier "z", BinaryOperation (Sub, Dereference (Identifier "z"), Integer 1));;
 let bdwhi: term = Sequence (asgny, asgnz);;
-let whi: term = While (BinaryOperation (Gt, Derefence (Identifier "z"), Integer 0), bdwhi);;
-let prt: term = Derefence (Identifier "y");;
+let whi: term = While (BinaryOperation (Gt, Dereference (Identifier "z"), Integer 0), bdwhi);;
+let prt: term = Dereference (Identifier "y");;
 let seq: term = Sequence (whi, prt);;
 let fat: term = Let ("x", Int, Integer 5, Let ("z", Reference Int, New (Identifier "x"), Let ("y", Reference Int, New (Integer 1), seq)));;
 

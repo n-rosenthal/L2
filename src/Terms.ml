@@ -18,7 +18,7 @@ type term =
     | Assignment of term * term                     (* x := e *)
     | Let of string * tipo * term * term            (* let x: T = e1 in e2 *)
     | New of term                                   (* new e *)
-    | Derefence of term                             (* !e *)
+    | Dereference of term                           (* !e *)
     | Unit                                          (* () *)
     | Sequence of term * term                       (* e1; e2 *)
     | Location of int                               (* l, local de memória *)
