@@ -294,10 +294,10 @@ let infer (e: term) : tipo * type_inference = (
                             pre = string_of_env env'' ^ " ⊢ '" ^ ast_of_term e1 ^ "' : " ^ string_of_tipo t1 ^ " ∧ '" ^ ast_of_term e2 ^ "' : " ^ string_of_tipo t2;
                             post = string_of_env env'' ^ " ⊢ '" ^ ast_of_term e ^ "' : " ^ string_of_tipo t2;
                             } :: r2)
-                    |   _ -> (ErrorType ("Let inválido\n\t[" ^ string_of_env env ^ "]"), env'',  {
+                    |   t1, t2 -> (ErrorType ("Let inválido com x=" ^ x ^ " t1=" ^ string_of_tipo t1 ^ " t2=" ^ string_of_tipo t2 ^ "\n\t[" ^ string_of_env env ^ "]"),  env'', {
                             name = "T-Let Error";
-                            pre = string_of_env env'' ^ " ⊢ '" ^ ast_of_term e1 ^ "' : " ^ string_of_tipo t1 ^ " ∧ '" ^ ast_of_term e2 ^ "' : " ^ string_of_tipo t2;
-                            post = ast_of_term e ^ " : " ^ string_of_tipo (ErrorType ("Let inválido\n\t[" ^ string_of_env env ^ "]"));
+                            pre  = string_of_env env'' ^ " ⊢ '" ^ ast_of_term e1 ^ "' : " ^ string_of_tipo t1 ^ " ∧ '" ^ ast_of_term e2 ^ "' : " ^ string_of_tipo t2;
+                            post = ast_of_term e ^ " : " ^ string_of_tipo (ErrorType ("Let invável\n\t[" ^ string_of_env env ^ "]"));
                             } :: r2)
                 )
         )
@@ -314,15 +314,15 @@ let infer (e: term) : tipo * type_inference = (
         | Dereference e -> (
             let t, env', r' = infer' e env r in
             (match t with
-                | Reference t -> (t, env', {
+                | t -> (t, env', {
                     name = "T-Deref";
                     pre = string_of_env env' ^ " ⊢ '" ^ ast_of_term e ^ "' : " ^ string_of_tipo t;
                     post = string_of_env env' ^ " ⊢ '" ^ ast_of_term e ^ "' : " ^ string_of_tipo t;
                     } :: r')
-                | _ -> (ErrorType ("Derefence inválido\n\t[" ^ string_of_env env ^ "]"), env', {
+                | _ -> (ErrorType ("Dereferência inválida\n\t[" ^ string_of_env env ^ "]"), env', {
                     name = "T-Deref Error";
                     pre = string_of_env env' ^ " ⊢ '" ^ ast_of_term e ^ "' : " ^ string_of_tipo t;
-                    post = ast_of_term e ^ " : " ^ string_of_tipo (ErrorType ("Derefence inválido\n\t[" ^ string_of_env env ^ "]"));
+                    post = ast_of_term e ^ " : " ^ string_of_tipo (ErrorType ("Dereferência inválida\n\t[" ^ string_of_env env ^ "]"));
                     } :: r')
             )
         )

@@ -208,6 +208,7 @@ let rec step    (e     :     term)
             Se `e1` não for um valor, avalia `e1` até que seja.
             Quando `e1` for um valor,
                 (1)
+                    [Tome a string `x` e monte um identificador `Identifier x`]
                     Associe o identificador `x` à tabela de símbolos.
                     Extraia a posição da memória `l` associada à `x`, na tabela de símbolos.
                 
