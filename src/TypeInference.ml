@@ -91,7 +91,7 @@ let rec typeinfer (e: term) (env: ambiente) : tipo = (match e with
     (** !e *)
     | Dereference e -> (match typeinfer e env with
         | Reference t -> t
-        | t -> ErrorType ("O tipo de e em um Derefence(e) deve ser Reference(t), mas foi \"" ^ ast_of_term e ^ "\": " ^ string_of_tipo t ^ "\n\t[" ^ string_of_env env ^ "]")
+        | t -> ErrorType ("O tipo de e em um Dereference(e) deve ser Reference(t), mas foi \"" ^ ast_of_term e ^ "\": " ^ string_of_tipo t ^ "\n\t[" ^ string_of_env env ^ "]")
     )
 
     (** () *)
@@ -277,7 +277,8 @@ let infer (e: term) : tipo * type_inference = (
                             pre = string_of_env env'' ^ " ⊢ '" ^ ast_of_term e1 ^ "' : " ^ string_of_tipo t1 ^ " ∧ '" ^ ast_of_term e2 ^ "' : " ^ string_of_tipo t2;
                             post = string_of_env env'' ^ " ⊢ '" ^ ast_of_term e ^ "' : Unit";
                             } :: r2)
-                    |   _ -> (ErrorType ("Atribuição inválida\n\t[" ^ string_of_env env ^ "]"),  env'', {
+                    |   _ -> (ErrorType ("Atribuição inválida. teve os tipos t1=" ^ string_of_tipo t1 ^ " e t2=" ^ string_of_tipo t2
+                                        ^ " e1=" ^ ast_of_term e1 ^ " e2=" ^ ast_of_term e2),  env'', {
                             name = "T-Atr Error";
                             pre = string_of_env env'' ^ " ⊢ '" ^ ast_of_term e1 ^ "' : " ^ string_of_tipo t1 ^ " ∧ '" ^ ast_of_term e2 ^ "' : " ^ string_of_tipo t2;
                             post = ast_of_term e ^ " : " ^ string_of_tipo (ErrorType ("Atribuição inválida\n\t[" ^ string_of_env env ^ "]"));
@@ -337,18 +338,19 @@ let infer (e: term) : tipo * type_inference = (
             let t1, env', r1 = infer' e1 env r in
             let t2, env'', r2 = infer' e2 env' r1 in
                 (match (t1, t2) with
-                    |   Unit, t2 -> (t2, env'', {
+                    |   Unit, t -> (t,  env'', {
                             name = "T-Sequence";
-                            pre = string_of_env env'' ^ " ⊢ '" ^ ast_of_term e1 ^ "' : Unit ∧ '" ^ ast_of_term e2 ^ "' : " ^ string_of_tipo t2;
-                            post = string_of_env env'' ^ " ⊢ '" ^ ast_of_term e ^ "' : " ^ string_of_tipo t2;
+                            pre = string_of_env env'' ^ " ⊢ '" ^ ast_of_term e1 ^ "' : Unit ∧ '" ^ ast_of_term e2 ^ "' : " ^ string_of_tipo t;
+                            post = string_of_env env'' ^ " ⊢ '" ^ ast_of_term e ^ "' : " ^ string_of_tipo t;
                             } :: r2)
-                    |   _ -> (ErrorType ("Sequence invável\n\t[" ^ string_of_env env ^ "]"), env'', {
+                    |   t, t' -> (ErrorType ("Uma sequência `e1; e2` deve ter `e1` tipado como Unit, mas teve " ^ string_of_tipo t),  env'', {
                             name = "T-Sequence Error";
-                            pre = string_of_env env'' ^ " ⊢ '" ^ ast_of_term e1 ^ "' : " ^ string_of_tipo t1 ^ " ∧ '" ^ ast_of_term e2 ^ "' : " ^ string_of_tipo t2;
-                            post = ast_of_term e ^ " : " ^ string_of_tipo (ErrorType ("Sequence invável\n\t[" ^ string_of_env env ^ "]"));
+                            pre  = string_of_env env'' ^ " ⊢ '" ^ ast_of_term e1 ^ "' : Unit ∧ '" ^ ast_of_term e2 ^ "' : " ^ string_of_tipo t2;
+                            post = ast_of_term e ^ " : " ^ string_of_tipo (ErrorType ("Sequence inválida\n\t[" ^ string_of_env env ^ "]"));
                             } :: r2)
                 )
         )
+
 
         | Location l -> (
             let t, env', r' = infer' e env r in

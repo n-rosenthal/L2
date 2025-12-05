@@ -6,12 +6,20 @@ open Testing
 (** testes para memória **)
 
 (** identificador ou variável x *)
-let var_x = (Let ("x", Int, Integer 1,
-                Conditional (Boolean true,
-                            Dereference (Identifier "x"),
-                            Integer 2)));;
+
+(** 
+  let x : Int = -1 in
+    let y : Int = 1 in
+      !x + !y 
+*)
+let sum a b = (Let ("x", Int, Integer a, Let ("y", Int, Integer b, 
+              (BinaryOperation (
+                Add,
+                Dereference (Identifier "x"),
+                Dereference (Identifier "y")
+              )))))
 let all_tests = [
-  var_x
+  sum 1 2
 ];;
 
 let () =

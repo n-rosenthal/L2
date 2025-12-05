@@ -81,11 +81,7 @@ let apply_binop bop v1 v2 =
 let rec substitute (x : term) (v : value) (e : term) : term =
     match e with
     (** caso-base: é exatamente (Identifier x) *)
-    | Identifier y ->
-        (match x with
-            | Identifier xname ->
-                if xname = y then (match term_of_value v with Some t -> t | None -> e) else e
-            | _ -> e)
+    | Identifier x -> if x = x then (Option.get (term_of_value v)) else e
 
     (** valores  *)
     | Integer n -> Integer n
@@ -133,8 +129,10 @@ let rec substitute (x : term) (v : value) (e : term) : term =
     | Assignment (e1, e2) ->
         Assignment (substitute x v e1, substitute x v e2)
 
-    | Dereference e1 ->
-        Dereference (substitute x v e1)
+    | Dereference e1 -> (match e1 with
+        | Identifier x -> Identifier x
+        | _ -> Dereference (substitute x v e1)
+    )
 
     | New e1 ->
         New (substitute x v e1)
@@ -200,6 +198,75 @@ let rec step    (e     :     term)
         })
 
         (**
+            Dereferência
+            Dereference e
+
+            !e : recupera o valor que está na posição de memória que `e` aponta 
+            
+            `e` deve ser avaliado para (VLocation l)
+
+            1.  se `e` não for um valor, então avalie-o até que seja.
+            2.  se `e` = `v` for um valor, então
+                2.1.  verifique se `v` é uma VLocation l
+                    2.1.2  se `v` = VLocation l, então
+                        2.1.2.1  tente extrair o valor da memória para a posição `l`
+                        2.1.2.2  se falhar, então produza um erro
+                        2.1.2.3  senão, retorne o valor
+                    2.1.3  senão, produza um erro
+                2.2.  senão, produza um erro
+            3.  senão, produza um erro etc
+        *)      
+        | Dereference e -> (match e with
+                | Identifier x -> (match search x table with
+                    (** tenta obter a posição de `x` na tabela de símbolos *)
+                    |   Some l -> (match get l mem with
+                        | Some v -> (match term_of_value v with
+                            | Some vv -> (Term vv, table, mem, {
+                                name    = "E-Deref";
+                                pre     = "";
+                                post    = ast_of_term e ^ ", " ^ string_of_mem mem ^ " -> $" ^ string_of_value v ^ ", " ^ string_of_mem mem;
+                            })
+
+                            | None -> Value (EvaluationError ("e=" ^ ast_of_term e ^ ", l=" ^ string_of_int l ^ ", mem=" ^ string_of_mem mem)),
+                                table, mem, {
+                                name = "E-Deref Error 1";
+                                pre  = "";
+                                post = "";
+                            })
+                    )
+
+                    | None -> Value (EvaluationError ("Identificador nao declarado: `" ^ x ^ "`")),
+                        table, mem, {
+                        name = "E-Deref Error 2";
+                        pre  = "";
+                        post = "";
+                    })
+
+                | Location l | Integer l -> (
+                    match get l mem with
+                        | Some v -> (Value v, table, mem, {
+                            name    = "E-Deref";
+                            pre     = "";
+                            post    = ast_of_term e ^ ", " ^ string_of_mem mem ^ " -> $" ^ string_of_value v ^ ", " ^ string_of_mem mem;
+                        })
+
+                        | None -> Value (EvaluationError ("e=" ^ ast_of_term e ^ ", l=" ^ string_of_int l ^ ", mem=" ^ string_of_mem mem)),
+                            table, mem, {
+                            name = "E-Deref Error 2";
+                            pre  = "";
+                            post = "";
+                        }
+                )
+
+            | _ -> Value (EvaluationError ("e=" ^ ast_of_term e ^ ", mem=" ^ string_of_mem mem)),
+                table, mem, {
+                name = "E-Deref Error 3";
+                pre  = "";
+                post = "";
+            }
+        )
+
+        (**
             Let x : t = e1 in e2
             
             Define o identificador `x`, de tipo `t`.
@@ -254,22 +321,30 @@ let rec step    (e     :     term)
                         (*  Associe o identificador `x` à posição `l`, na tabela de símbolos *)
                         let table' = extend x l table in
 
-                        (*  2.  Crie uma nova posição na memória em `l` e associe essa nova posição ao valor `e1`*)
-                        match (value_of_term e1) with 
-                        | Some v -> let mem' = set l v mem in
-                            (*  3.  Substitua toda ocorrência de (Identifier x) em `e2` por `v`*)
-                            let e2' = substitute (Identifier x) v e2 in
+                        (*  extraia o valor de e1 *)
+                        match value_of_term e1 with
+                        | Some v1 -> (
+                            (*  Crie uma nova posição na memória em `l` e associe essa nova posição ao valor `e1`,
+                                dessa forma armazenamos         `x` na tabela de símbolos
+                                                    e           `e1` = `v` na memória em mem[l] *)
+                            let l = where mem in
+                            let mem' = set l v1 mem in
 
-                            (*  4.  retorne `e2`, ..., etc. *)
-                            Term e2', table', mem', {
+                            (*  Substitua toda ocorrência de (Identifier x) em `e2` por `v`. *)
+                            (* let e2' = substitute (Identifier x) v1 e2 in *)
+
+                            (*  retorne `e2`, ..., etc. *)
+                            Term e2, table', mem', {
                                 name    = "E-Let";
-                                pre     = "T";
-                                post    = ast_of_term e ^ ", " ^ string_of_mem mem ^ " -> " ^ ast_of_term e2 ^ ", " ^ string_of_mem mem';
+                                pre     = "";
+                                post    = "e2=" ^ ast_of_term e2;
                             }
-                        | None -> Value (EvaluationError "Erro ao avaliar um termo"), table, mem, {
-                            name    = "E-Let Error 3";
+                        )
+
+                        | None -> Value (EvaluationError ("`e1` deveria derivar para um valor `v1` mas é " ^ string_of_term e1)), table, mem, {
+                            name    = "E-Let Error 1";
                             pre     = "";
-                            post    = ast_of_term e ^ ", " ^ string_of_mem mem ^ " -> $" ^ string_of_value (VLocation l) ^ ", " ^ string_of_mem mem;
+                            post    = "";
                         }
                 )
                     else
@@ -405,74 +480,7 @@ let rec step    (e     :     term)
                 }
         )
 
-        (**
-            Dereferência
-            Dereference e
-
-            !e : recupera o valor que está na posição de memória que `e` aponta 
-            
-            `e` deve ser avaliado para (VLocation l)
-
-            1.  se `e` não for um valor, então avalie-o até que seja.
-            2.  se `e` = `v` for um valor, então
-                2.1.  verifique se `v` é uma VLocation l
-                    2.1.2  se `v` = VLocation l, então
-                        2.1.2.1  tente extrair o valor da memória para a posição `l`
-                        2.1.2.2  se falhar, então produza um erro
-                        2.1.2.3  senão, retorne o valor
-                    2.1.3  senão, produza um erro
-                2.2.  senão, produza um erro
-            3.  senão, produza um erro etc
-        *)      
-        | Dereference e -> (
-            (** se `e` não for um valor, avalie-o até que seja um termo *)
-            if not (is_value_term e) then (match step e table mem with
-                | Term e', _, _, _ -> step (Dereference e') table mem
-                
-                (** erro, isto não pode acontecer *)
-                | Value v, _, _, _ -> (
-                    Value (EvaluationError "Erro ao avaliar um termo"), table, mem, {
-                        name    = "E-Deref Error 1";
-                        pre     = "";
-                        post    = ast_of_term e ^ ", " ^ string_of_mem mem ^ " -> $" ^ string_of_value v ^ ", " ^ string_of_mem mem;
-                    }
-                )
-            )
-
-            else
-                (** se `e` = `v` for um valor, verifique se é uma VLocation *)
-                match e with
-                | Location l -> (
-                    (** se for, tente extrair o valor da memória para a posição `l` *)
-                    if exists l mem then (match get l mem with
-                        | Some v -> (Value v, table, mem, {
-                            name    = "E-Deref";
-                            pre     = "";
-                            post    = ast_of_term e ^ ", " ^ string_of_mem mem ^ " -> $" ^ string_of_value v ^ ", " ^ string_of_mem mem;
-                        })
-
-                        (** se falhar, produza um erro *)
-                        | None -> Value (EvaluationError "A posição da memória nao foi encontrada"), table, mem, {
-                            name    = "E-Deref Error 2";
-                            pre     = "";
-                            post    = ast_of_term e ^ ", " ^ string_of_mem mem ^ " -> $" ^ string_of_value (EvaluationError "Erro ao extrair um valor da memória") ^ ", " ^ string_of_mem mem;
-                        }
-                    )
-
-                    (** senão, produza um erro *)
-                    else Value (EvaluationError "A posição da memória nao foi encontrada"), table, mem, {
-                        name    = "E-Deref Error 3";
-                        pre     = "";
-                        post    = ast_of_term e ^ ", " ^ string_of_mem mem ^ " -> $" ^ string_of_value (EvaluationError "Erro ao extrair um valor da memória") ^ ", " ^ string_of_mem mem;
-                    }
-                )
-
-                | _ -> Value (EvaluationError ("`e` deveria derivar para uma posição na memória `l` mas é " ^ string_of_term e)), table, mem, {
-                    name    = "E-Deref Error 4";
-                    pre     = "";
-                    post    = ast_of_term e ^ ", " ^ string_of_mem mem ^ " -> $" ^ string_of_value (EvaluationError "Erro ao extrair um valor da memória") ^ ", " ^ string_of_mem mem;
-                }
-        )
+        
 
         
         (** new e 
@@ -635,7 +643,14 @@ let rec step    (e     :     term)
                                 pre     = "";
                                 post    = ast_of_term e ^ ", " ^ string_of_mem mem ^ " -> $" ^ string_of_value v ^ ", " ^ string_of_mem mem;
                             }
-                        )))
+                        )
+
+                    | _ -> Value (EvaluationError ("Erro ao avaliar um termo, e=" ^ ast_of_term e)), table, mem, {
+                        name    = "E-BinOp Error 3";
+                        pre     = "";
+                        post    = ast_of_term e ^ ", " ^ string_of_mem mem ^ " -> $" ^ string_of_value (EvaluationError "Erro ao avaliar um termo") ^ ", " ^ string_of_mem mem;
+                    }
+            ))
 
 
         | _ -> (Value (EvaluationError "Não Implementado"), table, mem, {
