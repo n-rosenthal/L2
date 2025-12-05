@@ -90,7 +90,7 @@ type rule = {
 
     a tabela de símbolos é apenas uma lista de pares (identificador: string, localização: int) e é usada através de seus métodos:
         `is_bound`          - verifica se a variável `x` está na tabela de símbolos `table`;
-        `lookup`            - retorna a localização da variável `x` na tabela de símbolos `table`;
+        `search`            - retorna a localização da variável `x` na tabela de símbolos `table`;
         `extend`            - adiciona uma nova variável `x` na tabela de símbolos `table`;
 
     a memória, por sua vez, é uma lista de pares (localização: int, valor: value) e é usada através de seus métodos:
@@ -101,6 +101,9 @@ type rule = {
     a função `loc_of_identifier` é o meio-campo entre as duas estruturas; dada uma variável `x`, que está na tabela de símbolos,
     recuperamos sua localização `loc` na memória.
 **)
+
+(** localização na memória, aliás int *)
+type location = int;;
 
 (** uma tabela de símbolos é uma lista de pares (identificador, localização) 
     e representa um mapeamento entre variáveis e posições na memória *)
@@ -113,9 +116,9 @@ let rec is_bound (x: string) (table: symbols) : bool = match table with
 ;;
 
 (** retorna a localização da variável `x` na tabela de símbolos `table` *)
-let rec lookup (x: string) (table: symbols) : location option = match table with
+let rec search (x: string) (table: symbols) : location option = match table with
     | [] -> None
-    | (y, l) :: table -> if x = y then Some l else lookup x table
+    | (y, l) :: table -> if x = y then Some l else search x table
 ;;
 
 (** adiciona uma nova variável `x` na tabela de símbolos `table` *)

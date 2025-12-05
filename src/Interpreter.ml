@@ -93,38 +93,50 @@ begin
 end
 
 
-(* -------------------------------------------------------------------------- *)
-(*Full interpretation: performs type inference then evaluation                *)
-(* -------------------------------------------------------------------------- *)
 
+(**
+    Interpretador para `L_2`
+    
+    O interpretador é apenas uma função que tentará
+      tentar fazer a inferência de tipo de um termo,
+      imprimir seu tipo e as regras de derivação deste;
+      
+      tentar fazer a avaliação de um termo,
+      imprimir seu valor e as regras de avaliação deste;
+      
+      e terminar.
+      
+    A função de avaliação (`stepn`, isto é, dê n passos na avaliação
+    de um termo etc.) retorna um tipo resultado. Enquanto for Ok na
+    função `stepn`, esta está avaliando e produzindo termos. Quando
+    ocorre um Error em `stepn`, é porque a avaliação chegou em uma
+    avaliação presa, stuck. Então, para o interpretador, a função
+    `stepn` DEVE e sempre (?) retornará um Error. Este Error contém
+  
+    (valor, tabela de símbolos, memória, regras de avaliação)
+    
+    que são impressos em tela, etc.
+*)
 let interpret (e : term) : unit =
   let (t, t_rules) = infer e in
   match t with
-  | ErrorType msg ->
-      (* Type error: don't try to evaluate *)
-      section "Type Error";
-      print_raw msg;
-      print_line "Evaluation skipped.";
-      print_endline "------------------------------------------"
-
-      | _ ->
-        (* Successfully typed: evaluate term *)
+  | ErrorType s -> print_endline s
+  | t ->
+    begin
+      section "Type Inference";
+      print_just_typeinfer e t t_rules;
+      section "Evaluation";
         begin
-          match multi_step e [] 100 with
-          | Error msg ->
-              (* dynamic evaluation error *)
-              section "Evaluation Error";
-              print_raw msg;
-              print_endline "------------------------------------------"
+          match stepn e [] [] 100 [] with
+          | Error (v, table, mem, rules) ->
+            (** valor ou erro produzido na avaliação *)
+            print_endline (string_of_evaluation rules);
+            print_endline (ast_of_term e);
+            print_endline (string_of_term e);
+            print_endline (" = " ^ string_of_value v);
     
-          | Ok (final_t, mem, ev_trace) ->
-              (* convert final term to value and print everything *)
-              let v = value_of_term final_t in (match v with
-                | None ->
-                    (* runtime error value returned (EvaluationError) *)
-                    section "Runtime Error";
-                    print_endline "------------------------------------------"
-                | Some v ->
-                    print_interpretation e t t_rules v mem ev_trace
-              )
-        end
+          | Ok (e, table, mem, rules) ->
+            print_endline (string_of_evaluation rules);
+
+          end
+    end

@@ -132,16 +132,16 @@ let infer (e: term) : tipo * type_inference = (
         | Integer n -> (
             (Int, env, {
                 name = "T-Int";
-                requires = "T";
-                ensures = string_of_env env ^ " ⊢ '" ^ ast_of_term e ^ "' : Int";
+                pre = "T";
+                post = string_of_env env ^ " ⊢ '" ^ ast_of_term e ^ "' : Int";
             } :: r)
         )
 
         |  Boolean b -> (
             (Bool, env, {
                 name = "T-Bool";
-                requires = "T";
-                ensures = string_of_env env ^ " ⊢ '" ^ ast_of_term e ^ "' : Bool";
+                pre = "T";
+                post = string_of_env env ^ " ⊢ '" ^ ast_of_term e ^ "' : Bool";
             } :: r)
         )
 
@@ -150,16 +150,16 @@ let infer (e: term) : tipo * type_inference = (
                 | Some t -> (t, env, {
                     name = "T-Var";
                     (** Γ(x) = t *)
-                    requires = "Γ('" ^ x ^ "') : " ^ string_of_tipo t;
+                    pre = "Γ('" ^ x ^ "') : " ^ string_of_tipo t;
 
                     (** Γ ⊢ x : t *)
-                    ensures = string_of_env env ^ " ⊢ '" ^ ast_of_term e ^ "' : " ^ string_of_tipo t;
+                    post = string_of_env env ^ " ⊢ '" ^ ast_of_term e ^ "' : " ^ string_of_tipo t;
                     } :: r)
 
                 | None -> (ErrorType ("UnboundIdentifier"), env, {
                     name = "T-Var Error UnboundIdentifier";
-                    requires = "'" ^ x ^ "' ∉ Γ";
-                    ensures = string_of_env env ^ " ⊢ '" ^ ast_of_term e ^ "' : " ^ string_of_tipo (ErrorType ("UnboundIdentifier"));
+                    pre = "'" ^ x ^ "' ∉ Γ";
+                    post = string_of_env env ^ " ⊢ '" ^ ast_of_term e ^ "' : " ^ string_of_tipo (ErrorType ("UnboundIdentifier"));
                     } :: r)
                 )
             )
@@ -171,20 +171,20 @@ let infer (e: term) : tipo * type_inference = (
             (match t1, t2, t3 with
                 | Bool, t2, t3 when t2 = t3 -> (t2, env''', {
                     name = "T-If";
-                    requires = string_of_env env''' ^ " ⊢ '" ^ ast_of_term e1 ^ "' : Bool ∧ '" ^ ast_of_term e2 ^ "' : " ^ string_of_tipo t2 ^ " ∧ '" ^ ast_of_term e3 ^ "' : " ^ string_of_tipo t3;
-                    ensures = string_of_env env''' ^ " ⊢ '" ^ ast_of_term e ^ "' : " ^ string_of_tipo t2;
+                    pre = string_of_env env''' ^ " ⊢ '" ^ ast_of_term e1 ^ "' : Bool ∧ '" ^ ast_of_term e2 ^ "' : " ^ string_of_tipo t2 ^ " ∧ '" ^ ast_of_term e3 ^ "' : " ^ string_of_tipo t3;
+                    post = string_of_env env''' ^ " ⊢ '" ^ ast_of_term e ^ "' : " ^ string_of_tipo t2;
                     } :: r3)
                 
                 | Bool, t2, t3 -> (ErrorType ("O tipo das expressões e2 e e3 em um Conditional(e1, e2, e3) deve ser igual, mas foi \"" ^ ast_of_term e2 ^ "\": " ^ string_of_tipo t2 ^ " e \"" ^ ast_of_term e3 ^ "\": " ^ string_of_tipo t3 ^ "\n\t[" ^ string_of_env env ^ "]"), env''', {
                     name = "T-If Error";
-                    requires = string_of_env env''' ^ " ⊢ '" ^ ast_of_term e1 ^ "' : Bool ∧ '" ^ ast_of_term e2 ^ "' : " ^ string_of_tipo t2 ^ " ∧ '" ^ ast_of_term e3 ^ "' : " ^ string_of_tipo t3;
-                    ensures = ast_of_term e ^ " : " ^ string_of_tipo (ErrorType ("O tipo das expressões e2 e e3 em um Conditional(e1, e2, e3) deve ser igual, mas foi \"" ^ ast_of_term e2 ^ "\": " ^ string_of_tipo t2 ^ " e \"" ^ ast_of_term e3 ^ "\": " ^ string_of_tipo t3 ^ "\n\t[" ^ string_of_env env ^ "]"));
+                    pre = string_of_env env''' ^ " ⊢ '" ^ ast_of_term e1 ^ "' : Bool ∧ '" ^ ast_of_term e2 ^ "' : " ^ string_of_tipo t2 ^ " ∧ '" ^ ast_of_term e3 ^ "' : " ^ string_of_tipo t3;
+                    post = ast_of_term e ^ " : " ^ string_of_tipo (ErrorType ("O tipo das expressões e2 e e3 em um Conditional(e1, e2, e3) deve ser igual, mas foi \"" ^ ast_of_term e2 ^ "\": " ^ string_of_tipo t2 ^ " e \"" ^ ast_of_term e3 ^ "\": " ^ string_of_tipo t3 ^ "\n\t[" ^ string_of_env env ^ "]"));
                 } :: r3)
 
                 | t1, _, _ -> (ErrorType ("O tipo de e1 em um Conditional(e1, e2, e3) deve ser Bool, mas foi \"" ^ ast_of_term e1 ^ "\": " ^ string_of_tipo t1 ^ "\n\t[" ^ string_of_env env ^ "]"), env''', {
                     name = "T-If1 Error";
-                    requires = string_of_env env''' ^ " ⊢ '" ^ ast_of_term e1 ^ "' : " ^ string_of_tipo t1;
-                    ensures = ast_of_term e ^ " : " ^ string_of_tipo (ErrorType ("O tipo de e1 em um Conditional(e1, e2, e3) deve ser Bool, mas foi \"" ^ ast_of_term e1 ^ "\": " ^ string_of_tipo t1 ^ "\n\t[" ^ string_of_env env ^ "]"));
+                    pre = string_of_env env''' ^ " ⊢ '" ^ ast_of_term e1 ^ "' : " ^ string_of_tipo t1;
+                    post = ast_of_term e ^ " : " ^ string_of_tipo (ErrorType ("O tipo de e1 em um Conditional(e1, e2, e3) deve ser Bool, mas foi \"" ^ ast_of_term e1 ^ "\": " ^ string_of_tipo t1 ^ "\n\t[" ^ string_of_env env ^ "]"));
                     } :: r3)
             )
         )
@@ -198,19 +198,19 @@ let infer (e: term) : tipo * type_inference = (
                 | Mul, Int, Int ->
                     (Int, env'', {
                         name = "T-Op" ^ string_of_binary_operator op;
-                        requires = string_of_env env'' ^ " ⊢ '" ^ ast_of_term e1 ^ "' : Int ∧ '" ^ ast_of_term e2 ^ "' : Int";
-                        ensures = string_of_env env'' ^ " ⊢ '" ^ ast_of_term e ^ "' : Int";
+                        pre = string_of_env env'' ^ " ⊢ '" ^ ast_of_term e1 ^ "' : Int ∧ '" ^ ast_of_term e2 ^ "' : Int";
+                        post = string_of_env env'' ^ " ⊢ '" ^ ast_of_term e ^ "' : Int";
                         } :: r2)
                 | Div, Int, Int -> (
                     if e2 = Integer 0 then (ErrorType ("Divisão por zero\n\t[" ^ string_of_env env ^ "]"),  env'', {
                         name = "T-Op" ^ string_of_binary_operator op ^ " Error";
-                        requires = string_of_env env'' ^ " ⊢ '" ^ ast_of_term e1 ^ "' : Int ∧ '" ^ ast_of_term e2 ^ "' : Int";
-                        ensures = ast_of_term e ^ " : " ^ string_of_tipo (ErrorType ("Divisão por zero\n\t[" ^ string_of_env env ^ "]"));
+                        pre = string_of_env env'' ^ " ⊢ '" ^ ast_of_term e1 ^ "' : Int ∧ '" ^ ast_of_term e2 ^ "' : Int";
+                        post = ast_of_term e ^ " : " ^ string_of_tipo (ErrorType ("Divisão por zero\n\t[" ^ string_of_env env ^ "]"));
                         } :: r2)
                     else (Int,  env'', {
                         name = "T-Op" ^ string_of_binary_operator op ^ " Error";
-                        requires = string_of_env env'' ^ " ⊢ '" ^ ast_of_term e1 ^ "' : Int ∧ '" ^ ast_of_term e2 ^ "' : Int";
-                        ensures = string_of_env env'' ^ " ⊢ '" ^ ast_of_term e ^ "' : Int";
+                        pre = string_of_env env'' ^ " ⊢ '" ^ ast_of_term e1 ^ "' : Int ∧ '" ^ ast_of_term e2 ^ "' : Int";
+                        post = string_of_env env'' ^ " ⊢ '" ^ ast_of_term e ^ "' : Int";
                         } :: r2)
                 )
 
@@ -222,30 +222,30 @@ let infer (e: term) : tipo * type_inference = (
                 | Geq, Int, Int ->
                     (Bool,  env'',  {
                         name = "T-Op" ^ string_of_binary_operator op;
-                        requires = string_of_env env'' ^ " ⊢ '" ^ ast_of_term e1 ^ "' : Int ∧ '" ^ ast_of_term e2 ^ "' : Int";
-                        ensures = string_of_env env'' ^ " ⊢ '" ^ ast_of_term e ^ "' : Bool";
+                        pre = string_of_env env'' ^ " ⊢ '" ^ ast_of_term e1 ^ "' : Int ∧ '" ^ ast_of_term e2 ^ "' : Int";
+                        post = string_of_env env'' ^ " ⊢ '" ^ ast_of_term e ^ "' : Bool";
                         } :: r2)
 
                 | Eq, Bool, Bool
                 | Neq, Bool, Bool ->
                     (Bool, env'',  {
                         name = "T-Op" ^ string_of_binary_operator op;
-                        requires = string_of_env env'' ^ " ⊢ '" ^ ast_of_term e1 ^ "' : Bool ∧ '" ^ ast_of_term e2 ^ "' : Bool";
-                        ensures = string_of_env env'' ^ " ⊢ '" ^ ast_of_term e ^ "' : Bool";
+                        pre = string_of_env env'' ^ " ⊢ '" ^ ast_of_term e1 ^ "' : Bool ∧ '" ^ ast_of_term e2 ^ "' : Bool";
+                        post = string_of_env env'' ^ " ⊢ '" ^ ast_of_term e ^ "' : Bool";
                         } :: r2)
 
                 | And, Bool, Bool
                 | Or, Bool, Bool ->
                     (Bool,  env'',  {
                         name = "T-Op" ^ string_of_binary_operator op;
-                        requires = string_of_env env'' ^ " ⊢ '" ^ ast_of_term e1 ^ "' : Bool ∧ '" ^ ast_of_term e2 ^ "' : Bool";
-                        ensures = string_of_env env'' ^ " ⊢ '" ^ ast_of_term e ^ "' : Bool";
+                        pre = string_of_env env'' ^ " ⊢ '" ^ ast_of_term e1 ^ "' : Bool ∧ '" ^ ast_of_term e2 ^ "' : Bool";
+                        post = string_of_env env'' ^ " ⊢ '" ^ ast_of_term e ^ "' : Bool";
                         } :: r2)
 
                 | _ -> (ErrorType ("Operador binário inválido inválido\n\t[" ^ string_of_env env ^ "]"),  env'',  {
                     name = "T-Op" ^ string_of_binary_operator op ^ " Error";
-                    requires = string_of_env env'' ^ " ⊢ '" ^ ast_of_term e1 ^ "' : " ^ string_of_tipo t1 ^ " ∧ '" ^ ast_of_term e2 ^ "' : " ^ string_of_tipo t2;
-                    ensures = ast_of_term e ^ " : " ^ string_of_tipo (ErrorType ("Operador binário inválido\n\t[" ^ string_of_env env ^ "]"));
+                    pre = string_of_env env'' ^ " ⊢ '" ^ ast_of_term e1 ^ "' : " ^ string_of_tipo t1 ^ " ∧ '" ^ ast_of_term e2 ^ "' : " ^ string_of_tipo t2;
+                    post = ast_of_term e ^ " : " ^ string_of_tipo (ErrorType ("Operador binário inválido\n\t[" ^ string_of_env env ^ "]"));
                     } :: r2)
             )
         )
@@ -256,14 +256,14 @@ let infer (e: term) : tipo * type_inference = (
                 (match (t1, t2) with
                     |   Bool, Unit -> (Unit,  env'', {
                             name = "T-While";
-                            requires = string_of_env env'' ^ " ⊢ '" ^ ast_of_term e1 ^ "' : Bool ∧ '" ^ ast_of_term e2 ^ "' : Unit";
-                            ensures = string_of_env env'' ^ " ⊢ '" ^ ast_of_term e ^ "' : Unit";
+                            pre = string_of_env env'' ^ " ⊢ '" ^ ast_of_term e1 ^ "' : Bool ∧ '" ^ ast_of_term e2 ^ "' : Unit";
+                            post = string_of_env env'' ^ " ⊢ '" ^ ast_of_term e ^ "' : Unit";
                             } :: r2)
                     
                     |   _ -> (ErrorType ("While inválido\n\t[" ^ string_of_env env ^ "]"),  env'', {
                             name = "T-While Error";
-                            requires = string_of_env env'' ^ " ⊢ '" ^ ast_of_term e1 ^ "' : " ^ string_of_tipo t1 ^ " ∧ '" ^ ast_of_term e2 ^ "' : " ^ string_of_tipo t2;
-                            ensures = ast_of_term e ^ " : " ^ string_of_tipo (ErrorType ("While inválido\n\t[" ^ string_of_env env ^ "]"));
+                            pre = string_of_env env'' ^ " ⊢ '" ^ ast_of_term e1 ^ "' : " ^ string_of_tipo t1 ^ " ∧ '" ^ ast_of_term e2 ^ "' : " ^ string_of_tipo t2;
+                            post = ast_of_term e ^ " : " ^ string_of_tipo (ErrorType ("While inválido\n\t[" ^ string_of_env env ^ "]"));
                             } :: r2)
                 )
         )
@@ -274,13 +274,13 @@ let infer (e: term) : tipo * type_inference = (
                 (match (t1, t2) with
                     |   Reference t1, t2 when t1 = t2 -> (Unit,  env'', {
                             name = "T-Atr";
-                            requires = string_of_env env'' ^ " ⊢ '" ^ ast_of_term e1 ^ "' : " ^ string_of_tipo t1 ^ " ∧ '" ^ ast_of_term e2 ^ "' : " ^ string_of_tipo t2;
-                            ensures = string_of_env env'' ^ " ⊢ '" ^ ast_of_term e ^ "' : Unit";
+                            pre = string_of_env env'' ^ " ⊢ '" ^ ast_of_term e1 ^ "' : " ^ string_of_tipo t1 ^ " ∧ '" ^ ast_of_term e2 ^ "' : " ^ string_of_tipo t2;
+                            post = string_of_env env'' ^ " ⊢ '" ^ ast_of_term e ^ "' : Unit";
                             } :: r2)
                     |   _ -> (ErrorType ("Atribuição inválida\n\t[" ^ string_of_env env ^ "]"),  env'', {
                             name = "T-Atr Error";
-                            requires = string_of_env env'' ^ " ⊢ '" ^ ast_of_term e1 ^ "' : " ^ string_of_tipo t1 ^ " ∧ '" ^ ast_of_term e2 ^ "' : " ^ string_of_tipo t2;
-                            ensures = ast_of_term e ^ " : " ^ string_of_tipo (ErrorType ("Atribuição inválida\n\t[" ^ string_of_env env ^ "]"));
+                            pre = string_of_env env'' ^ " ⊢ '" ^ ast_of_term e1 ^ "' : " ^ string_of_tipo t1 ^ " ∧ '" ^ ast_of_term e2 ^ "' : " ^ string_of_tipo t2;
+                            post = ast_of_term e ^ " : " ^ string_of_tipo (ErrorType ("Atribuição inválida\n\t[" ^ string_of_env env ^ "]"));
                             } :: r2)
                 )
         )
@@ -291,13 +291,13 @@ let infer (e: term) : tipo * type_inference = (
                 (match (t1, t2) with
                     |   t1, t2 when t1 = t2 -> (t2,  env'', {
                             name = "T-Let";
-                            requires = string_of_env env'' ^ " ⊢ '" ^ ast_of_term e1 ^ "' : " ^ string_of_tipo t1 ^ " ∧ '" ^ ast_of_term e2 ^ "' : " ^ string_of_tipo t2;
-                            ensures = string_of_env env'' ^ " ⊢ '" ^ ast_of_term e ^ "' : " ^ string_of_tipo t2;
+                            pre = string_of_env env'' ^ " ⊢ '" ^ ast_of_term e1 ^ "' : " ^ string_of_tipo t1 ^ " ∧ '" ^ ast_of_term e2 ^ "' : " ^ string_of_tipo t2;
+                            post = string_of_env env'' ^ " ⊢ '" ^ ast_of_term e ^ "' : " ^ string_of_tipo t2;
                             } :: r2)
                     |   _ -> (ErrorType ("Let inválido\n\t[" ^ string_of_env env ^ "]"), env'',  {
                             name = "T-Let Error";
-                            requires = string_of_env env'' ^ " ⊢ '" ^ ast_of_term e1 ^ "' : " ^ string_of_tipo t1 ^ " ∧ '" ^ ast_of_term e2 ^ "' : " ^ string_of_tipo t2;
-                            ensures = ast_of_term e ^ " : " ^ string_of_tipo (ErrorType ("Let inválido\n\t[" ^ string_of_env env ^ "]"));
+                            pre = string_of_env env'' ^ " ⊢ '" ^ ast_of_term e1 ^ "' : " ^ string_of_tipo t1 ^ " ∧ '" ^ ast_of_term e2 ^ "' : " ^ string_of_tipo t2;
+                            post = ast_of_term e ^ " : " ^ string_of_tipo (ErrorType ("Let inválido\n\t[" ^ string_of_env env ^ "]"));
                             } :: r2)
                 )
         )
@@ -306,8 +306,8 @@ let infer (e: term) : tipo * type_inference = (
             let t, env', r' = infer' e env r in
             (Reference t,  env', {
                 name = "T-New";
-                requires = string_of_env env' ^ " ⊢ '" ^ ast_of_term e ^ "' : " ^ string_of_tipo t;
-                ensures = string_of_env env' ^ " ⊢ '" ^ ast_of_term e ^ "' : " ^ string_of_tipo (Reference t);
+                pre = string_of_env env' ^ " ⊢ '" ^ ast_of_term e ^ "' : " ^ string_of_tipo t;
+                post = string_of_env env' ^ " ⊢ '" ^ ast_of_term e ^ "' : " ^ string_of_tipo (Reference t);
                 } :: r')
         )
 
@@ -316,21 +316,21 @@ let infer (e: term) : tipo * type_inference = (
             (match t with
                 | Reference t -> (t, env', {
                     name = "T-Deref";
-                    requires = string_of_env env' ^ " ⊢ '" ^ ast_of_term e ^ "' : " ^ string_of_tipo t;
-                    ensures = string_of_env env' ^ " ⊢ '" ^ ast_of_term e ^ "' : " ^ string_of_tipo t;
+                    pre = string_of_env env' ^ " ⊢ '" ^ ast_of_term e ^ "' : " ^ string_of_tipo t;
+                    post = string_of_env env' ^ " ⊢ '" ^ ast_of_term e ^ "' : " ^ string_of_tipo t;
                     } :: r')
                 | _ -> (ErrorType ("Derefence inválido\n\t[" ^ string_of_env env ^ "]"), env', {
                     name = "T-Deref Error";
-                    requires = string_of_env env' ^ " ⊢ '" ^ ast_of_term e ^ "' : " ^ string_of_tipo t;
-                    ensures = ast_of_term e ^ " : " ^ string_of_tipo (ErrorType ("Derefence inválido\n\t[" ^ string_of_env env ^ "]"));
+                    pre = string_of_env env' ^ " ⊢ '" ^ ast_of_term e ^ "' : " ^ string_of_tipo t;
+                    post = ast_of_term e ^ " : " ^ string_of_tipo (ErrorType ("Derefence inválido\n\t[" ^ string_of_env env ^ "]"));
                     } :: r')
             )
         )
 
         | Unit -> (Unit, env, {
             name = "T-Unit";
-            requires = string_of_env env ^ " ⊢ '" ^ ast_of_term e ^ "' : Unit";
-            ensures = string_of_env env ^ " ⊢ '" ^ ast_of_term e ^ "' : Unit";
+            pre = string_of_env env ^ " ⊢ '" ^ ast_of_term e ^ "' : Unit";
+            post = string_of_env env ^ " ⊢ '" ^ ast_of_term e ^ "' : Unit";
             } :: r)
 
         | Sequence (e1, e2) -> (
@@ -339,13 +339,13 @@ let infer (e: term) : tipo * type_inference = (
                 (match (t1, t2) with
                     |   Unit, t2 -> (t2, env'', {
                             name = "T-Sequence";
-                            requires = string_of_env env'' ^ " ⊢ '" ^ ast_of_term e1 ^ "' : Unit ∧ '" ^ ast_of_term e2 ^ "' : " ^ string_of_tipo t2;
-                            ensures = string_of_env env'' ^ " ⊢ '" ^ ast_of_term e ^ "' : " ^ string_of_tipo t2;
+                            pre = string_of_env env'' ^ " ⊢ '" ^ ast_of_term e1 ^ "' : Unit ∧ '" ^ ast_of_term e2 ^ "' : " ^ string_of_tipo t2;
+                            post = string_of_env env'' ^ " ⊢ '" ^ ast_of_term e ^ "' : " ^ string_of_tipo t2;
                             } :: r2)
                     |   _ -> (ErrorType ("Sequence invável\n\t[" ^ string_of_env env ^ "]"), env'', {
                             name = "T-Sequence Error";
-                            requires = string_of_env env'' ^ " ⊢ '" ^ ast_of_term e1 ^ "' : " ^ string_of_tipo t1 ^ " ∧ '" ^ ast_of_term e2 ^ "' : " ^ string_of_tipo t2;
-                            ensures = ast_of_term e ^ " : " ^ string_of_tipo (ErrorType ("Sequence invável\n\t[" ^ string_of_env env ^ "]"));
+                            pre = string_of_env env'' ^ " ⊢ '" ^ ast_of_term e1 ^ "' : " ^ string_of_tipo t1 ^ " ∧ '" ^ ast_of_term e2 ^ "' : " ^ string_of_tipo t2;
+                            post = ast_of_term e ^ " : " ^ string_of_tipo (ErrorType ("Sequence invável\n\t[" ^ string_of_env env ^ "]"));
                             } :: r2)
                 )
         )
@@ -355,21 +355,21 @@ let infer (e: term) : tipo * type_inference = (
             (match t with
                 | Reference t -> (t, env', {
                     name = "T-Location";
-                    requires = string_of_env env' ^ " ⊢ '" ^ ast_of_term e ^ "' : " ^ string_of_tipo t;
-                    ensures = string_of_env env' ^ " ⊢ '" ^ ast_of_term e ^ "' : " ^ string_of_tipo t;
+                    pre = string_of_env env' ^ " ⊢ '" ^ ast_of_term e ^ "' : " ^ string_of_tipo t;
+                    post = string_of_env env' ^ " ⊢ '" ^ ast_of_term e ^ "' : " ^ string_of_tipo t;
                     } :: r')
                 | _ -> (ErrorType ("Location inválida\n\t[" ^ string_of_env env ^ "]"), env', {
                     name = "T-Location Error";
-                    requires = string_of_env env' ^ " ⊢ '" ^ ast_of_term e ^ "' : " ^ string_of_tipo t;
-                    ensures = ast_of_term e ^ " : " ^ string_of_tipo (ErrorType ("Location inválida\n\t[" ^ string_of_env env ^ "]"));
+                    pre = string_of_env env' ^ " ⊢ '" ^ ast_of_term e ^ "' : " ^ string_of_tipo t;
+                    post = ast_of_term e ^ " : " ^ string_of_tipo (ErrorType ("Location inválida\n\t[" ^ string_of_env env ^ "]"));
                     } :: r')
             )
         )
 
         | _ -> (ErrorType ("Expressão inválida\n\t[" ^ string_of_env env ^ "]"), env, {
             name = "T-Error";
-            requires = string_of_env env ^ " ⊢ '" ^ ast_of_term e ^ "' : " ^ string_of_tipo (ErrorType ("Expressão inválida\n\t[" ^ string_of_env env ^ "]"));
-            ensures = ast_of_term e ^ " : " ^ string_of_tipo (ErrorType ("Expressão inválida\n\t[" ^ string_of_env env ^ "]"));
+            pre = string_of_env env ^ " ⊢ '" ^ ast_of_term e ^ "' : " ^ string_of_tipo (ErrorType ("Expressão inválida\n\t[" ^ string_of_env env ^ "]"));
+            post = ast_of_term e ^ " : " ^ string_of_tipo (ErrorType ("Expressão inválida\n\t[" ^ string_of_env env ^ "]"));
             } :: r)
     ) in
     let t, env', r = infer' e [] [] in
