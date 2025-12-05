@@ -16,6 +16,7 @@ let string_of_value = function
     | VBoolean b        -> string_of_bool b
     | VUnit             -> "()"
     | VLocation l       -> "ℓ" ^ string_of_int l
+    | EvaluationError s -> "[EvaluationError] " ^ s
 
 
 (** repr. string de um operador binário *)

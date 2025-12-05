@@ -10,6 +10,10 @@ open TypeInference  (*  inferência estática de tipos para `L2` *)
 open Evaluation     (*  avaliação de termos para `L2` *)
 
 
+
+
+
+
 let assert_tipo (e: term) (t: tipo) : bool = eq_tipo (typeinfer e []) t;;
 let assert_value (e: term) (v: value) : bool = (match value_of_term e with
     | Some v' -> v = v'

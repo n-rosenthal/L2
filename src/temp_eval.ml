@@ -275,7 +275,7 @@
 
             (** Dereference !e1
                 Dado que `e1` é uma posição na memória, `!e1` avalia para o valor armazenado na memória na localização `e1` *)
-            | Derefence e1 ->
+            X| Derefence e1 ->
                 (** se `e1` nao for um valor, avalie-o ate que seja *)
                 if not (is_value_term e1) then
                     (match step e1 mem with

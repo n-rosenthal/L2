@@ -149,3 +149,18 @@ let rec set (loc: location) (v: value) (mem: memory) : memory = (
     in
     aux [] mem
 )
+
+(** ordena a memória em função das localizações (loc, fst mem) *)
+let sort (mem: memory) : memory =
+    let compare (l1, _) (l2, _) = compare l1 l2 in
+    List.sort compare mem
+;;
+
+(** retorna a próxima posição livre na memória *)
+let where mem =
+    mem
+    |> List.map fst
+    |> List.sort compare
+    |> List.fold_left (fun expect l ->
+            if l = expect then expect + 1 else expect
+        ) 0

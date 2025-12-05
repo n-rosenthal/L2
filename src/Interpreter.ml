@@ -105,17 +105,6 @@ end
       imprimir seu valor e as regras de avaliação deste;
       
       e terminar.
-      
-    A função de avaliação (`stepn`, isto é, dê n passos na avaliação
-    de um termo etc.) retorna um tipo resultado. Enquanto for Ok na
-    função `stepn`, esta está avaliando e produzindo termos. Quando
-    ocorre um Error em `stepn`, é porque a avaliação chegou em uma
-    avaliação presa, stuck. Então, para o interpretador, a função
-    `stepn` DEVE e sempre (?) retornará um Error. Este Error contém
-  
-    (valor, tabela de símbolos, memória, regras de avaliação)
-    
-    que são impressos em tela, etc.
 *)
 let interpret (e : term) : unit =
   let (t, t_rules) = infer e in
@@ -127,16 +116,18 @@ let interpret (e : term) : unit =
       print_just_typeinfer e t t_rules;
       section "Evaluation";
         begin
-          match stepn e [] [] 100 [] with
-          | Error (v, table, mem, rules) ->
-            (** valor ou erro produzido na avaliação *)
-            print_endline (string_of_evaluation rules);
+          let (valor, tabela_de_simbolos, memoria, regras_de_avaliacao) = stepn e [] [] 100 [] in 
+            print_endline "------------------------------------------";
             print_endline (ast_of_term e);
             print_endline (string_of_term e);
-            print_endline (" = " ^ string_of_value v);
-    
-          | Ok (e, table, mem, rules) ->
-            print_endline (string_of_evaluation rules);
-
+            print_endline "------------------------------------------";
+            
+            print_endline (" : " ^ string_of_tipo t);
+            print_endline (string_of_type_inference t_rules);
+            print_endline "------------------------------------------";
+            print_endline (" = " ^ string_of_value valor);
+            print_endline (string_of_evaluation regras_de_avaliacao);
+            print_endline "------------------------------------------";
+            print_endline (string_of_mem memoria);
           end
     end
