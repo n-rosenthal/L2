@@ -39,45 +39,16 @@ let rec put (x: string) (t: tipo) (env: ambiente) : ambiente =
 
 
 (**
-    Um esquema (concreto) de regra de inferência de tipos é definido por
-        o nome do esquema de regra (rule scheme)
-        a pré-condição à regra (requires),
-        a pos-condição da regra (ensures)
-    
-    portanto a regra indicada por `name`, garante que se `requires` estiver garantido,
-    então `ensures` seguirá. *)
-    type type_rule = {
-      name:       string;
-      requires:   string;
-      ensures:    string;
-  } and type_inference = type_rule list;;
+    Esquema de regra concreto para inferência estática de tipos
+    e para avaliação de termos
+**)
+type rule = {
+    name:   string;
+    pre:    string;
+    post:   string;
+}   and type_inference = rule list
+    and evaluation = rule list;;
 
-
-
-
-
-(**
-    Um esquema (concreto) de regra de inferência de avaliação é definido por
-        o nome do esquema de regra (rule scheme)
-        a pré-condição à regra (requires),
-        a pos-condição da regra (ensures)
-    
-    portanto a regra indicada por `name`, garante que se `requires` estiver garantido,
-    então `ensures` seguirá. *)
-    type eval_rule = {
-        name:       string;
-        requires:   string;
-        ensures:    string;
-    } and evaluation = eval_rule list;;
-
-
-let rec string_of_evaluation (r: evaluation) : string = match r with
-    | [] -> ""
-    | h :: r -> "[" ^ h.name ^ "] " ^
-                "{" ^ h.requires ^ "} =>" ^
-                "{" ^ h.ensures ^ "}\n" ^
-                string_of_evaluation r
-;;
 
 (**
     Memória para avaliação de termos

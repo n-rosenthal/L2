@@ -34,16 +34,14 @@ let pp_list pp xs = join " " (List.map pp xs)
 (* -------------------------------------------------------------------------- *)
 
 let string_of_value = function
-  | VInteger n -> string_of_int n
-  | VBoolean b -> string_of_bool b
-  | VUnit      -> "()"
+  | VInteger n        -> string_of_int n
+  | VBoolean b        -> string_of_bool b
+  | VUnit             -> "()"
+  | Location
   | EvaluationError s -> "[RuntimeError] " ^ s
 
 
-(* -------------------------------------------------------------------------- *)
-(* Operators                                                                  *)
-(* -------------------------------------------------------------------------- *)
-
+(** repr. string de um operador binário *)
 let string_of_binary_operator = function
   | Add -> "+"
   | Sub -> "-"
@@ -58,11 +56,7 @@ let string_of_binary_operator = function
   | And -> "&&"
   | Or  -> "||"
 
-
-(* -------------------------------------------------------------------------- *)
-(* Types                                                                      *)
-(* -------------------------------------------------------------------------- *)
-
+(** repr. string de um tipo *)
 let rec string_of_tipo : tipo -> string = function
   | Int -> "int"
   | Bool -> "bool"
@@ -70,136 +64,104 @@ let rec string_of_tipo : tipo -> string = function
   | ErrorType s -> "[TypeError] " ^ s
   | Unit -> "unit"
 ;;
-(* -------------------------------------------------------------------------- *)
-(* Pretty-printing for terms                                                  *)
-(* -------------------------------------------------------------------------- *)
 
-let rec string_of_term = function
-  | Integer n      -> string_of_int n
-  | Boolean b      -> string_of_bool b
-  | Identifier x   -> x
-  | Unit           -> "()"
+(** retorna uma string com `2n` espaços *)
+let indent (n: int) : string = String.make (2 * n) ' '   (* 2 espaços por nível *)
+
+(** repr. string identada de um termo *)
+let rec string_of_term ?(lvl=0) e =
+  match e with
+  | Integer n ->
+      indent lvl ^ string_of_int n
+
+  | Boolean b ->
+      indent lvl ^ string_of_bool b
+
+  | Identifier x ->
+      indent lvl ^ x
+
+  | Unit ->
+      indent lvl ^ "()"
 
   | Conditional (e1, e2, e3) ->
-      "if " ^ string_of_term e1
-      ^ " then " ^ string_of_term e2
-      ^ " else " ^ string_of_term e3
+      indent lvl ^ "if\n"
+      ^ string_of_term ~lvl:(lvl+1) e1 ^ "\n"
+      ^ indent lvl ^ "then\n"
+      ^ string_of_term ~lvl:(lvl+1) e2 ^ "\n"
+      ^ indent lvl ^ "else\n"
+      ^ string_of_term ~lvl:(lvl+1) e3
 
   | While (cond, body) ->
-      "while " ^ string_of_term cond ^ " do " ^ string_of_term body
+      indent lvl ^ "while\n"
+      ^ string_of_term ~lvl:(lvl+1) cond ^ "\n"
+      ^ indent lvl ^ "do\n"
+      ^ string_of_term ~lvl:(lvl+1) body
 
   | BinaryOperation (op, e1, e2) ->
-      parens (string_of_term e1
-              ^ " " ^ string_of_binary_operator op ^ " "
-              ^ string_of_term e2)
+      indent lvl ^ "(\n"
+      ^ string_of_term ~lvl:(lvl+1) e1 ^ "\n"
+      ^ indent (lvl+1) ^ string_of_binary_operator op ^ "\n"
+      ^ string_of_term ~lvl:(lvl+1) e2 ^ "\n"
+      ^ indent lvl ^ ")"
 
   | Assignment (lhs, rhs) ->
+      indent lvl ^
       string_of_term lhs ^ " := " ^ string_of_term rhs
 
   | Let (x, t, e1, e2) ->
-      "let " ^ x ^ ": " ^ string_of_tipo t
-      ^ " = " ^ string_of_term e1
-      ^ " in " ^ string_of_term e2
+      indent lvl ^ "let " ^ x ^ " : " ^ string_of_tipo t ^ " =\n"
+      ^ string_of_term ~lvl:(lvl+1) e1 ^ "\n"
+      ^ indent lvl ^ "in\n"
+      ^ string_of_term ~lvl:(lvl+1) e2
 
   | New e ->
-      "new " ^ string_of_term e
+      indent lvl ^ "new\n" ^ string_of_term ~lvl:(lvl+1) e
 
   | Derefence e ->
-      "!" ^ string_of_term e
+      indent lvl ^ "!" ^ string_of_term e
 
   | Sequence (e1, e2) ->
-      string_of_term e1 ^ "; " ^ string_of_term e2
+      indent lvl ^ "(\n"
+      ^ string_of_term ~lvl:(lvl+1) e1 ^ ";\n"
+      ^ string_of_term ~lvl:(lvl+1) e2 ^ "\n"
+      ^ indent lvl ^ ")"
 
   | Location l ->
-      "ℓ" ^ string_of_int l
+      indent lvl ^ "ℓ" ^ string_of_int l
+
+  | EvaluationError s ->
+      indent lvl ^ "[RuntimeError] " ^ s
 
 
-(* -------------------------------------------------------------------------- *)
-(* AST representation (sexp-like)                                             *)
-(* -------------------------------------------------------------------------- *)
+(** repr. string de um termo enquanto uma árvore sintática *)
+let rec ast_of_term (e: term) : string = (match e with
+  | Integer n       -> "(Integer " ^ string_of_int n ^ ")"
+  | Boolean b       -> "(Boolean " ^ string_of_bool b ^ ")"
+  | Unit            -> "()"
+  | Location l      -> "(Location " ^ string_of_int l ^ ")"
+  | Identifier x    -> "(Identifier " ^ x ^ ")"
+  | Conditional (a, b, c) -> "(Conditional (" ^ ast_of_term a ^ ", " ^ ast_of_term b ^ ", " ^ ast_of_term c ^ "))"
+  | BinaryOperation (op, a, b) -> "(BinaryOperation (" ^ string_of_binary_operator op ^ ", " ^ ast_of_term a ^ ", " ^ ast_of_term b ^ "))"
+  | While (a, b) -> "(While (" ^ ast_of_term a ^ ", " ^ ast_of_term b ^ "))"
+  | Assignment (l, r) -> "(Assignment (" ^ ast_of_term l ^ ", " ^ ast_of_term r ^ "))"
+  | Let (s, t, a, b) -> "(Let (" ^ s ^ ", " ^ string_of_tipo t ^ ", " ^ ast_of_term a ^ ", " ^ ast_of_term b ^ "))"
+  | New a -> "(New (" ^ ast_of_term a ^ "))"
+  | Derefence a -> "(Derefence (" ^ ast_of_term a ^ "))"
+  | Sequence (a, b) -> "(Sequence (" ^ ast_of_term a ^ ", " ^ ast_of_term b ^ "))"
+  | EvaluationError s -> "([EvaluationError] " ^ s ^ ")"
+)
 
-let constructor name parts =
-  parens (name ^ " " ^ join " " parts)
-
-let literal s =
-  parens ("Literal " ^ quote s)
-
-let rec ast_of_term = function
-  | Integer n ->
-      constructor "Integer" [literal (string_of_int n)]
-
-  | Boolean b ->
-      constructor "Boolean" [literal (string_of_bool b)]
-
-  | Identifier x ->
-      constructor "Identifier" [quote x]
-
-  | Unit ->
-      constructor "Unit" []
-
-  | Conditional (e1, e2, e3) ->
-      constructor "Conditional"
-        [ ast_of_term e1; ast_of_term e2; ast_of_term e3 ]
-
-  | BinaryOperation (op, e1, e2) ->
-      constructor "BinaryOperation"
-        [ string_of_binary_operator op;
-          ast_of_term e1;
-          ast_of_term e2 ]
-
-  | While (cond, body) ->
-      constructor "While" [ast_of_term cond; ast_of_term body]
-
-  | Assignment (lhs, rhs) ->
-      constructor "Assignment" [ast_of_term lhs; ast_of_term rhs]
-
-  | Let (x, t, e1, e2) ->
-      constructor "Let"
-        [ quote x;
-          quote (string_of_tipo t);
-          ast_of_term e1;
-          ast_of_term e2 ]
-
-  | New e ->
-      constructor "New" [ast_of_term e]
-
-  | Derefence e ->
-      constructor "Derefence" [ast_of_term e]
-
-  | Sequence (e1, e2) ->
-      constructor "Sequence" [ast_of_term e1; ast_of_term e2]
-
-  | Location l ->
-      constructor "Location" [string_of_int l]
-
-
-(* -------------------------------------------------------------------------- *)
-(* Environment printer                                                        *)
-(* -------------------------------------------------------------------------- *)
-
+(** repr. string de um ambiente de tipos *)
 let rec string_of_env = function
   | [] -> ""
   | (x, t) :: env ->
       "(" ^ x ^ ": " ^ string_of_tipo t ^ ") " ^ string_of_env env
 
-
-(* -------------------------------------------------------------------------- *)
-(* Type inference trace printer                                               *)
-(* -------------------------------------------------------------------------- *)
-
-let rec string_of_type_inference : type_inference -> string = function
-  | [] -> ""
-  | h :: rest ->
-      string_of_type_rule h ^ "\n" ^ string_of_type_inference rest
-and string_of_type_rule { name; requires; ensures } =
-  name ^ ": " ^ requires ^ " -> " ^ ensures
-
-(* -------------------------------------------------------------------------- *)
-(* Memory printer                                                             *)
-(* -------------------------------------------------------------------------- *)
-
+(** repr. string de uma localização na memória *)
 let string_of_location loc = string_of_int loc
 
+
+(** repr. string de uma memória *)
 let rec string_of_mem = function
   | [] -> ""
   | (loc, s, v) :: rest ->
