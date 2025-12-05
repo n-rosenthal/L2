@@ -57,8 +57,8 @@ let rec infer' (e: term) (env: ambiente) (r: type_inference) : (tipo * ambiente 
         | Integer n -> (
             (Int, env, {
                 name = "T-Int";
-                requires = "T";
-                ensures = string_of_env env ^ " ⊢ '" ^ ast_of_term e ^ "' : Int";
+                pre = "T";
+                post = string_of_env env ^ " ⊢ '" ^ ast_of_term e ^ "' : Int";
             } :: r)
         )
 
@@ -103,8 +103,8 @@ let rec infer' (e: term) (env: ambiente) (r: type_inference) : (tipo * ambiente 
         | Boolean b -> (
             (Bool, env, {
                 name = "T-Bool";
-                requires = "T";
-                ensures = string_of_env env ^ " ⊢ '" ^ ast_of_term e ^ "' : Bool";
+                pre = "T";
+                post = string_of_env env ^ " ⊢ '" ^ ast_of_term e ^ "' : Bool";
             } :: r)
         )
 
@@ -146,8 +146,8 @@ let rec infer' (e: term) (env: ambiente) (r: type_inference) : (tipo * ambiente 
         | Unit -> (
             (Unit, env, {
                 name = "T-Unit";
-                requires = "T";
-                ensures = string_of_env env ^ " ⊢ '" ^ ast_of_term e ^ "' : Unit";
+                pre = "T";
+                post = string_of_env env ^ " ⊢ '" ^ ast_of_term e ^ "' : Unit";
             } :: r)
         )
 
@@ -212,12 +212,12 @@ let rec infer' (e: term) (env: ambiente) (r: type_inference)
             in
             (t, env1, {
                 name = "T-New";
-                requires =
+                pre =
                     (match t1 with
                      | ErrorType _ -> "T (erro propagado)"
                      | _ -> string_of_env env ^
                             " ⊢ '" ^ ast_of_term e1 ^ "' : " ^ string_of_type t1);
-                ensures =
+                post =
                     (match t with
                      | ErrorType _ -> string_of_type t
                      | _ -> string_of_env env ^
