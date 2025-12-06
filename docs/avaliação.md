@@ -9,17 +9,22 @@ let rec step    (e     :    term)
 
 `step e mem` é a **um passo na avaliação** de um termo `e` sobre uma memória `mem`. O resultado da avaliação é uma 3-upla de termo, memória e regra de avaliação usada para fazer `e` $\to$ `e'`.
 
-2.  Uma **regra de avaliação** `eval_rule` é um **registro** de três componentes:
+2.  As regras de avaliação, assim como as de inferência de tipo, são tipadas da seguinte forma:
 
 ```ocaml
-type eval_rule = {
-    rule: string;
-    pre: string;
-    post: string;
-}
+(** `src/Constructions.ml` *)
+
+type rule = {
+    name:   string;
+    pre:    string;
+    post:   string;
+}   and type_inference = rule list
+    and evaluation = rule list;;
 ```
 
-que representa o *nome* da regra de avaliação, a *pré-condição* e a *pós-condição* da regra. O tipo `eval_rule` busca imitar o esquema de regra abstrata de avaliação:
+Note que uma regra de avaliação (`evaluation`) é uma lista de regras de avaliação, e uma regra de inferência de tipo (`type_inference`) é uma lista de regras de inferência de tipo. Etc.
+
+As regras buscam imitar a consequência sintática:
 
 $$
 \frac{\text{pre}}
@@ -33,63 +38,40 @@ $$
 (**
     `stepn` avalia `n` passos de um termo `e` sobre uma memória `mem`.
 *)
-let rec stepn   (e      : term)
-                (mem    : memory)
-                (n      : int) 
-                : (term * memory * evaluation, string) result =
-    (** se o limite de passos for atingido, retorna um erro. *)
-    if (n <= 0) then Error "step limit reached"
-
-    (** se o termo `e` for um valor, então retorna o termo, memória e uma lista de regras de avaliação vazia. *)
-    else if is_value_term e then Ok (e, mem, [])
-        else
-            (** se for possível dar um passo (n > 0, is_value_term e = false), tente *)
-            match step e mem with
-                (** se der errado, propague o erro *)
-                | Error s -> Error s
-
-                (** se der certo, chame a função recursivamente; se o resultado DESTA iteração
-                    for um valor, então ele será retornado antes de `step e' mem` ser chamado sobre
-                    ele; senão, (se for possível dar um passo, isso é, se não for um valor) segue ... *)
-                | Ok (e', mem', r) ->
-                    (** chamada recursiva *)
-                    (match multi_step e' mem' (limit - 1) with
-                        (** se der errado, propague o erro (novamente) *)
-                        | Error s -> Error s
-                    (** se der certo, retorne o termo, memória e uma regra de avaliação *)
-                    | Ok (final_t, final_mem, trace) -> Ok (final_t, final_mem, (r :: trace)))
+let rec stepn (e : term) (mem : memory) (table : symbols) (limit : int) 
+    : (value * symbols * memory * evaluation) =
+    if limit <= 0 then 
+        (EvaluationError "Limite de passos atingido", table, mem, [])
+    else
+        match step e table mem with
+        | (Value v, new_table, new_mem, r) -> 
+            (v, new_table, new_mem, [r])
+        | (Term e', new_table, new_mem, r) -> 
+            let (v, final_table, final_mem, rules) = stepn e' new_mem new_table (limit - 1) in
+            (v, final_table, final_mem, r :: rules)
 ```
 
-A função `stepn` retorna **ou** uma 3-upla de termo, memória e regra de avaliação **ou** uma mensagem de erro. É necessário fazer *pattern matching* para determinar se o resultado é uma 3-upla ou uma mensagem de erro. **Isso é feito no interpretador**. A função do interpretador é **receber os resultados da inferência de tipo e da avaliação**. Então **o interpretador** decide se deu certo ou não e **imprime o resultado**.
+4.  Memória e Tabela de Símbolos.
 
-4. Em OCaml, um *tipo resultado* é um tipo que pode ser `Ok` ou `Error`. Entende-se que é o *resultado* de alguma operação; se a operação for bem sucedida, então será retornado um objeto do tipo `Ok t`; caso contrário, `Error` é retornado. No caso acima, `stepn` retorna um resultado de um termo, memória e uma regra de avaliação (Ok) ou uma mensagem de erro (Error).
+A memória foi implementada em dois passos.
+    1.  Existe uma tabela de símbolos, que associa identificadores a localizações na memória;
+    2.  Existe uma memória, que associa localizações a valores.
 
-5. O *tipo* `evaluation` representa uma **lista de regras de avaliação**. Uma regra de avaliação é um **registro**, então uma `evaluation` é uma **lista de registros**.
+    Uma localização na memória (`location = int`) é associada a um identificador
+    quando fazemos um comando `let x = e1 in e2`. Após verificar que `x` ainda não está
+    na tabela de símbolos, criamos uma nova entrada na tabela e verificamos a memória
+    por uma nova posição disponível. A memória fornece `l`, e registramos na tabela de símbolos
+    a entrada (`x`, `l`).
 
-```ocaml
-(**
-    Um esquema (concreto) de regra de avaliação é definido por
-        o nome do esquema de regra (rule scheme)
-        a pré-condição à regra  (pre),
-        a pos-condição da regra (pos)
+    Em seguida, para o valor `e1` em `let x = e1 in e2`, avaliamos `e1` e registramos
+    o resultado na memória na localização `l`. Por fim, é feita a substituição de toda
+    ocorrência do identificador `x` em `e2` por `v1`, que é o valor de `e1` na memória.
+
+    Em `src/Constructions.ml` existem mais informações sobre a memória e a tabela de símbolos,
+    bem como o ambiente de tipos.
+
+    Em `src/Evaluation.ml`, a avaliação de cada termo relacionado a memória:
+
+        Identifier x, new e, !e, e1 := e2, let x : t = e1 in e2
     
-    portanto a regra indicada por `name`, garante que se `pre` estiver garantido,
-    então `post` seguirá. *)
-    type eval_rule = {
-        name:   string;
-        pre:    string;
-        post:   string;
-    } and evaluation = eval_rule list;;
-
-
-    (** mesma coisa que: *)
-    type eval_rule = {
-        name:   string;
-        pre:    string;
-        post:   string;
-    };;
-
-    type evaluation = eval_rule list;;
-```
-
-6.  Para saber sobre o interpretador e o programa principal, ver o `README.md` principal.
+    demonstrará os detalhes da implementação.
