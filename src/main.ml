@@ -18,26 +18,26 @@ open Testing
                     z :=  !z - 1);
             ! y)
         *)
-let fat n = Let ("x", Int, Integer n,
-              Let ("y", Reference Int, New (Identifier "x"),
-                  Let ("z", Reference Int, New (Integer 1),
-                      Sequence (
-                        While (
-                          BinaryOperation (Gt, Dereference (Identifier "z"), Integer 0),
-                          Sequence (
-                            Assignment (
-                              Identifier "y",
-                              BinaryOperation (Mul, Dereference (Identifier "y"), Dereference (Identifier "z"))
-                            ),
-                            Assignment (
-                              Identifier "z",
-                              BinaryOperation (Sub, Dereference (Identifier "z"), Integer 1))
-                          )
-                        ),
-                        Dereference (Identifier "y")
-                      )
-                  )))
-;;
+let fat n = 
+  Let ("x", Int, Integer n,
+    Let ("y", Reference Int, New (Integer 1),  (* y começa com 1 *)
+        Let ("z", Reference Int, New (Identifier "x"),  (* z começa com x (n) *)
+            Sequence (
+              While (
+                BinaryOperation (Gt, Dereference (Identifier "z"), Integer 0),
+                Sequence (
+                  Assignment (
+                    Identifier "y",
+                    BinaryOperation (Mul, Dereference (Identifier "y"), Dereference (Identifier "z"))
+                  ),
+                  Assignment (
+                    Identifier "z",
+                    BinaryOperation (Sub, Dereference (Identifier "z"), Integer 1))
+                )
+              ),
+              Dereference (Identifier "y")
+            )
+        )))
 
 let () =                            
   List.iteri
