@@ -7,26 +7,47 @@ open Testing
 
 (** identificador ou variável x *)
 
-(** 
-  let x : Int = -1 in
-    let y : Int = 1 in
-      !x + !y 
-*)
-let sum a b = (Let ("x", Int, Integer a, Let ("y", Int, Integer b, 
-              (BinaryOperation (
-                Add,
-                Dereference (Identifier "x"),
-                Dereference (Identifier "y")
-              )))))
-let all_tests = [
-  sum 1 2
-];;
+        (**      TESTE - fatorial      
 
-let () =
+            let  x: int     =  5 in 
+            let  z: ref int = new x in 
+            let  y: ref int = new 1 in 
+            
+            (while (!z > 0) (
+                    y :=  !y * !z;
+                    z :=  !z - 1);
+            ! y)
+        *)
+let fat n = Let ("x", Int, Integer n,
+              Let ("y", Reference Int, New (Identifier "x"),
+                  Let ("z", Reference Int, New (Integer 1),
+                      Sequence (
+                        While (
+                          BinaryOperation (Gt, Dereference (Identifier "z"), Integer 0),
+                          Sequence (
+                            Assignment (
+                              Identifier "y",
+                              BinaryOperation (Mul, Dereference (Identifier "y"), Dereference (Identifier "z"))
+                            ),
+                            Assignment (
+                              Identifier "z",
+                              BinaryOperation (Sub, Dereference (Identifier "z"), Integer 1))
+                          )
+                        ),
+                        Dereference (Identifier "y")
+                      )
+                  )))
+;;
+
+let t_1 = (Let ("x", Int, Integer 1,
+            Let ("y", Reference Int, New (Integer 1), Unit)))                                                          
+;;
+
+let () =                            
   List.iteri
     (fun i e ->
         print_endline ("Teste " ^ string_of_int (i + 1));
         interpret e;
         print_endline "")
-    all_tests
+    [t_1]
 

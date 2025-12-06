@@ -80,13 +80,19 @@ let apply_binop bop v1 v2 =
 *)
 let rec substitute (x : term) (v : value) (e : term) : term =
     match e with
-    (** caso-base: é exatamente (Identifier x) *)
-    | Identifier x -> if x = x then (Option.get (term_of_value v)) else e
-
+    (** caso-base: é exatamente (Identifier s) e s é igual ao nome em x *)
+    | Identifier s -> (match x with
+        | Identifier s2 when s = s2 -> (
+            match term_of_value v with
+            | Some t -> t
+            | None -> e  (* não deveria acontecer *)
+        )
+        | _ -> e)
     (** valores  *)
     | Integer n -> Integer n
     | Boolean b -> Boolean b
     | Unit -> Unit
+    | Location l -> Location l
 
     | BinaryOperation (op, e1, e2) ->
         BinaryOperation (op, substitute x v e1, substitute x v e2)
@@ -129,14 +135,10 @@ let rec substitute (x : term) (v : value) (e : term) : term =
     | Assignment (e1, e2) ->
         Assignment (substitute x v e1, substitute x v e2)
 
-    | Dereference e1 -> (match e1 with
-        | Identifier x -> Identifier x
-        | _ -> Dereference (substitute x v e1)
-    )
+    | Dereference e1 -> Dereference (substitute x v e1)
 
-    | New e1 ->
-        New (substitute x v e1)
-
+    | New e1 -> New (substitute x v e1)
+    ;;
 
 (** tipo resultado de passo de avaliação
     O resultado de um passo de avaliação sobre um termo `e` pode ser
@@ -291,68 +293,37 @@ let rec step    (e     :     term)
                     retorne `e2`, ..., etc.
         *)
         | Let (x, t, e1, e2) -> (
-            (** verifica se `e1` é tipado em `t` *)
+            (** verificar se o tipo de `e1` é o mesmo que `t` *)
             let (t1, _) = infer e1 in
-            if t1 = t then
-                (** e1 : t, então verifique se e1 é um valor *)
-                if not (is_value_term e1) then 
-                    (match step e1 table mem with
-                        | Term e1', _, _, _ -> step (Let (x, t, e1', e2)) table mem
-                        | Value v1, _, _, _ -> Value (EvaluationError "Erro ao avaliar um termo"), table, mem, {
-                            name    = "E-Let Error 1";
-                            pre     = "";
-                            post    = ast_of_term e ^ ", " ^ string_of_mem mem ^ " -> $" ^ string_of_value v1 ^ ", " ^ string_of_mem mem;
-                        })
-                
-                (** `e1 = v1` é um valor, então ... *)
-                else(
-                    (*  1.  Associe o identificador `x` à tabela de símbolos. *)
-                    (*  Verifique se o identificador `x` já não está na tabela de símbolos *)
-                    if is_bound x table then
-                        Value (EvaluationError ("Identificador duplicado: `" ^ x ^ "`")), table, mem, {
-                            name    = "E-Let Error 2";
-                            pre     = "";
-                            post    = ast_of_term e ^ ", " ^ string_of_mem mem ^ " -> $" ^ string_of_value (EvaluationError ("Identificador duplicado: `" ^ x ^ "`")) ^ ", " ^ string_of_mem mem;
-                        }
-                    else
-                        (*  Extraia a próxima posição disponível na memória *)
-                        let l = where mem in
-
-                        (*  Associe o identificador `x` à posição `l`, na tabela de símbolos *)
-                        let table' = extend x l table in
-
-                        (*  extraia o valor de e1 *)
-                        match value_of_term e1 with
-                        | Some v1 -> (
-                            (*  Crie uma nova posição na memória em `l` e associe essa nova posição ao valor `e1`,
-                                dessa forma armazenamos         `x` na tabela de símbolos
-                                                    e           `e1` = `v` na memória em mem[l] *)
-                            let l = where mem in
-                            let mem' = set l v1 mem in
-
-                            (*  Substitua toda ocorrência de (Identifier x) em `e2` por `v`. *)
-                            (* let e2' = substitute (Identifier x) v1 e2 in *)
-
-                            (*  retorne `e2`, ..., etc. *)
-                            Term e2, table', mem', {
-                                name    = "E-Let";
-                                pre     = "";
-                                post    = "e2=" ^ ast_of_term e2;
-                            }
-                        )
-
-                        | None -> Value (EvaluationError ("`e1` deveria derivar para um valor `v1` mas é " ^ string_of_term e1)), table, mem, {
-                            name    = "E-Let Error 1";
-                            pre     = "";
-                            post    = "";
-                        }
-                )
-                    else
-                        Value (EvaluationError ("`e1` deveria derivar para um valor `v1` mas é " ^ string_of_term e1)), table, mem, {
-                            name    = "E-Let Error 1";
-                            pre     = "";
-                            post    = "";
+            if (t <> t1) then (Value (EvaluationError ("e1=" ^ ast_of_term e1 ^ ", t1=" ^ string_of_tipo t1 ^ " <> t=" ^ string_of_tipo t
+                                                        ^ " em e=" ^ ast_of_term e)), table, mem, {
+                                                        name = "E-Let Error 1";
+                                                        pre  = "";
+                                                        post = "";
+                                                    })
+            else if not (is_value_term e1) then 
+                (match step e1 table mem with
+                    | Term e1', _, _, _ -> step (Let (x, t, e1', e2)) table mem
+                    | Value v, _, _, _ -> Value (EvaluationError "Erro ao avaliar um termo"), table, mem, {
+                        name = "E-Let Error 2";
+                        pre  = "";
+                        post = "";
                     })
+            else
+                (** criar uma entrada na tabela de símbolos para `x` e armazenar `e1` na memória em `l` *)
+                let l = where mem in
+                let table' = extend x l table in
+                match value_of_term e1 with
+                | Some v1 ->
+                    let mem' = set l v1 mem in
+                    let e2' = substitute (Identifier x) v1 e2 in
+                    step e2' table' mem'
+                | None -> Value (EvaluationError "Não foi possível obter valor de e1"), table, mem, {
+                    name = "E-Let Error 3";
+                    pre  = "";
+                    post = "";
+                }
+        )
 
         (**
             Atribuição
@@ -586,14 +557,33 @@ let rec step    (e     :     term)
         (** while e1 do e2
             comando while é avaliado expandindo-o para um if com e1, e2 e Unit
             *)
-        | While (e1, e2) ->(
-            let expanded = Conditional (e1, Sequence (e2, While (e1, e2)), Unit) in
-            Term (expanded), table, mem, {
-                name    = "E-While";
-                pre     = "";
-                post    = ast_of_term e ^ ", " ^ string_of_mem  mem ^ " -> " ^ ast_of_term expanded ^ ", " ^ string_of_mem mem
-            })
-
+        | While (cond, body) ->
+            (** avaliar a condição *)
+            if not (is_value_term cond) then
+                (match step cond table mem with
+                    | Term cond', _, _, _ -> step (While (cond', body)) table mem
+                    | Value v, _, _, _ -> Value (EvaluationError "Erro ao avaliar condição do while"), table, mem, {
+                        name = "E-While Error";
+                        pre = "";
+                        post = "";
+                    })
+            else
+                (match value_of_term cond with
+                    | Some (VBoolean true) ->
+                        (** condição verdadeira: avaliar o corpo e depois o while novamente *)
+                        step (Sequence (body, While (cond, body))) table mem
+                    | Some (VBoolean false) ->
+                        (** condição falsa: retornar Unit *)
+                        (Term Unit, table, mem, {
+                            name = "E-While False";
+                            pre = "";
+                            post = ast_of_term e ^ ", " ^ string_of_mem mem ^ " -> ()";
+                        })
+                    | _ -> Value (EvaluationError "Condição do while deve ser booleana"), table, mem, {
+                        name = "E-While Type Error";
+                        pre = "";
+                        post = "";
+                    })
         (** operações binárias:
         avaliação da esquerda para a direita:
 
@@ -677,7 +667,14 @@ let rec stepn       (e       :       term)
                         :   (value * symbols * memory * evaluation) =
     if (limit <= 0) then ((EvaluationError "limite de passos atingido"), table, mem, rules)
     else
-        match step e table mem with
-            | (Value v, t, m, r)    -> (v, t, m, r :: rules)
-            | (Term e', t, m, r)    -> stepn e' m t (limit - 1) (r :: rules)
+        try
+            match step e table mem with
+                (** debug: print *)
+                | (Value v, t, m, r)    -> print_endline (string_of_rule r); (v, t, m, r :: rules)
+                | (Term e', t, m, r)    -> print_endline (string_of_rule r);  stepn e' m t (limit - 1) (r :: rules)
+        with
+            | Failure s -> (EvaluationError ("failure: " ^ s), table, mem, rules)
+            | Invalid_argument s -> (EvaluationError ("argumento inválido: " ^ s), table, mem, rules)
+            | Out_of_memory -> (EvaluationError "SEM MEMÓRIA", table, mem, rules)
+            | exn -> (EvaluationError ("exceção levantada: " ^ Printexc.to_string exn), table, mem, rules)
     ;;

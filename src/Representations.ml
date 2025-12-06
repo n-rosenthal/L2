@@ -142,6 +142,10 @@ let rec string_of_mem = function
         "(" ^ string_of_location loc ^ ": " ^ string_of_value v ^ ") " ^ string_of_mem mem
     ;;
 
+let string_of_rule r =
+    r.name ^ " " ^ r.pre ^ " " ^ r.post
+;;
+
 
 (** repr. string de uma avaliação (lista de registros {nome, pré-condição, pós-condição}) *)
 let rec string_of_evaluation eval =

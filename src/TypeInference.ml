@@ -59,22 +59,13 @@ let rec typeinfer (e: term) (env: ambiente) : tipo = (match e with
         | t -> ErrorType ("O tipo de e1 em um While(e1, e2) deve ser Bool, mas foi \"" ^ ast_of_term e1 ^ "\": " ^ string_of_tipo t ^ "\n\t[" ^ string_of_env env ^ "]")
     )
 
-    (* x := e1 *)
-    | Assignment (lhs, e1) -> (
-        match lhs with
-        | Identifier x ->
-            let t_rhs = typeinfer e1 env in
-            (match lookup x env with
-            | Some (Reference t_ref) ->
-                if t_rhs = t_ref then Unit
-                else ErrorType ("Tipo incompatível em atribuição para " ^ x)
-            | Some t_var ->
-                ErrorType ("LHS da atribuição não é uma referência: \"" ^ x ^ "\": " ^ string_of_tipo t_var ^ "\n\t[" ^ string_of_env env ^ "]")
-            | None ->
-                ErrorType ("Identificador \"" ^ x ^ "\" não declarado no ambiente de tipos\n\t[" ^ string_of_env env ^ "]")
-            )
-        | _ ->
-            ErrorType ("LHS de uma atribuição deve ser um identificador, mas foi: " ^ ast_of_term lhs ^ "\n\t[" ^ string_of_env env ^ "]")
+    (* e1 := e2 
+       x : ref t, e1 : t => x := e1 : unit *)
+    | Assignment (e1, e2) -> (
+        let t1, t2 = typeinfer e1 env, typeinfer e2 env in
+        match t1 with
+        | Reference t when t = t2 -> Unit
+        | _ -> ErrorType ("O tipo de e1 em um Assignment(e1, e2) deve ser Reference(t), mas foi \"" ^ ast_of_term e1 ^ "\": " ^ string_of_tipo t1 ^ "\n\t[" ^ string_of_env env ^ "]")
     )
 
     (** let x : t = e1 in e2 *)
@@ -288,19 +279,13 @@ let infer (e: term) : tipo * type_inference = (
 
         | Let (x, t, e1, e2) -> (
             let t1, env', r1 = infer' e1 env r in
-            let t2, env'', r2 = infer' e2 (put x t env') r1 in
-                (match (t1, t2) with
-                    |   t1, t2 when t1 = t2 -> (t2,  env'', {
-                            name = "T-Let";
-                            pre = string_of_env env'' ^ " ⊢ '" ^ ast_of_term e1 ^ "' : " ^ string_of_tipo t1 ^ " ∧ '" ^ ast_of_term e2 ^ "' : " ^ string_of_tipo t2;
-                            post = string_of_env env'' ^ " ⊢ '" ^ ast_of_term e ^ "' : " ^ string_of_tipo t2;
-                            } :: r2)
-                    |   t1, t2 -> (ErrorType ("Let inválido com x=" ^ x ^ " t1=" ^ string_of_tipo t1 ^ " t2=" ^ string_of_tipo t2 ^ "\n\t[" ^ string_of_env env ^ "]"),  env'', {
-                            name = "T-Let Error";
-                            pre  = string_of_env env'' ^ " ⊢ '" ^ ast_of_term e1 ^ "' : " ^ string_of_tipo t1 ^ " ∧ '" ^ ast_of_term e2 ^ "' : " ^ string_of_tipo t2;
-                            post = ast_of_term e ^ " : " ^ string_of_tipo (ErrorType ("Let invável\n\t[" ^ string_of_env env ^ "]"));
-                            } :: r2)
-                )
+            let env'' = (x, t) :: env' in
+            let t2, env''', r2 = infer' e2 env'' r1 in
+                (t2, env''', {
+                    name = "T-Let";
+                    pre = string_of_env env'' ^ " ⊢ '" ^ ast_of_term e1 ^ "' : " ^ string_of_tipo t1 ^ " ∧ '" ^ ast_of_term e2 ^ "' : " ^ string_of_tipo t2;
+                    post = string_of_env env'' ^ " ⊢ '" ^ ast_of_term e ^ "' : " ^ string_of_tipo t2;
+                    } :: r2)
         )
 
         | New e -> (
@@ -315,7 +300,7 @@ let infer (e: term) : tipo * type_inference = (
         | Dereference e -> (
             let t, env', r' = infer' e env r in
             (match t with
-                | t -> (t, env', {
+                | Reference t -> (t, env', {
                     name = "T-Deref";
                     pre = string_of_env env' ^ " ⊢ '" ^ ast_of_term e ^ "' : " ^ string_of_tipo t;
                     post = string_of_env env' ^ " ⊢ '" ^ ast_of_term e ^ "' : " ^ string_of_tipo t;
