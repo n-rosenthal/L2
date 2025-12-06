@@ -2,7 +2,7 @@
     `src/Constructions.ml`
     
     Estruturas usadas para a inferência estática de tipos (ambiente de tipos)
-    e para a avaliação de termos (memória)
+    e para a avaliação de termos (memória e tabela de símbolos).
   *)
 
 open Types
