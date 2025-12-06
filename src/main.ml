@@ -45,5 +45,5 @@ let () =
         print_endline ("Teste " ^ string_of_int (i + 1));
         interpret e;
         print_endline "")
-    [fat 5]
+    [fat 20]
 
