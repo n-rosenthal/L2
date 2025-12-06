@@ -142,7 +142,7 @@ type step_result =
 let rec step (e : term) (table : symbols) (mem : memory) 
     : step_result * symbols * memory * rule =
     match e with
-    (** Valores: não precisam de mais avaliação *)
+    (** Valores: avaliação imediata (termo-valor -> valor-valor) *)
     | Integer n -> (Value (VInteger n), table, mem, {
         name = "E-Int";
         pre = "";
@@ -167,7 +167,17 @@ let rec step (e : term) (table : symbols) (mem : memory)
         post = "ℓ" ^ string_of_int l;
     })
 
-    (** Identificador: procura na tabela de símbolos *)
+    (** Identifier x
+        
+        Um identificaro é avaliado para a POSIÇÃO NA MEMÓRIA que este ocupa.
+        Nesta implementação, os identificadores são armazenados na tabela de símbolos.
+        A tabela de símbolos é uma lista de pares (identificador, posição na memória ocupada pelo identificador)
+        
+        Então a avaliação de `Identifier x` é
+            1.  Verifique se `x` está na tabela de símbolos.
+            2.  Se estiver, avalie para a posição `VLocation l` que este ocupa na memória
+            3.  Senão, produza um erro de unbound identifier 
+    *)
     | Identifier x -> (
         match search x table with
         | Some l -> (Value (VLocation l), table, mem, {
@@ -176,14 +186,23 @@ let rec step (e : term) (table : symbols) (mem : memory)
             post = x ^ " → ℓ" ^ string_of_int l;
         })
         | None -> (Value (EvaluationError ("Identificador não declarado: " ^ x)), 
-                   table, mem, {
+                    table, mem, {
             name = "E-Id-Error";
             pre = "";
             post = "";
         })
     )
 
-    (** New: aloca memória *)
+    (** new e
+        Alocação de memória
+        
+        Se `e` for avaliado para um valor `v`, aloque memória para `v` e retorne a posição da memória `l` alocada.
+        
+        1.  Se `e` for um valor, então
+            1.  Aloque memória para `v` (peça a memória por uma nova posição `l` usando a função `where mem`
+            2.  Coloque o novo valor `v` na memória na nova posição `l`
+            3.  Retorne `VLocation l`
+        *)
     | New e -> (
         match step e table mem with
         | (Value v, new_table, new_mem, r) ->
@@ -196,7 +215,7 @@ let rec step (e : term) (table : symbols) (mem : memory)
                 post = "new " ^ string_of_value v ^ " → ℓ" ^ string_of_int l;
             })
         | (Term _, _, _, _) -> 
-            (* Isso não deveria acontecer se step for implementado corretamente *)
+            (* isto não deve ocorrer *)
             (Value (EvaluationError "Erro interno em New"), table, mem, {
                 name = "E-New-Error";
                 pre = "";
@@ -204,7 +223,11 @@ let rec step (e : term) (table : symbols) (mem : memory)
             })
     )
 
-    (** Dereference: acessa memória *)
+    (** Dereference e
+        !e: acessa memória
+
+        Se `e` for avaliado para uma localização `l`, então retorne o conteúdo da memória na localização `l`
+        *)
     | Dereference e -> (
         match step e table mem with
         | (Value (VLocation l), new_table, new_mem, r) ->
@@ -234,7 +257,22 @@ let rec step (e : term) (table : symbols) (mem : memory)
             })
     )
 
-    (** Let: associação de valor a identificador *)
+    (** Let: associação de valor a identificador
+        Let x, t, e1, e2
+
+        `x` é uma string, `t` um tipo, `e1` um termo e `e2` outro termo.
+
+        1.  se `t` for uma referência, isto é, `ref t` para um termo de tipo `t` na memória, então
+            1.  avalie `e1` para um valor `v1`
+            2.  se `v1` for um localização, então
+                1.  estenda a tabela de símbolos com `x` e `v1 = l`
+                2.  retorne `e2`, **sem** substituir `x` em `e2`.
+        
+        2.  se `t` for outro tipo qualquer, isto é, `t` para um termo de tipo `t` na memória, então
+            1.  avalie `e1` para um valor `v1`
+            2.  substitua `x` por `v1` em `e2`
+            3.  retorne `e2`
+        *)
     | Let (x, typ, e1, e2) -> (
         match step e1 table mem with
         | (Value v1, table1, mem1, r1) ->
@@ -271,7 +309,20 @@ let rec step (e : term) (table : symbols) (mem : memory)
             })
     )
 
-    (** Assignment: atribuição *)
+    (** Assignment e1 := e2
+        atribuição
+
+        avalia `e1` até que `e1` seja uma localização na memória `l`
+            então avalia `e2` até que seja um valor e coloca `v2` na memória na posição `l`
+
+        ---
+        
+        Se `e1` for avaliado para uma localização `l`,
+            então avalie `e2` para um valor `v2`
+            e coloque o valor `v2` na memória na localização `l`
+        
+        Se `e1` for avaliado para um termo `e1'`, então retorne `Assignment (e1', e2)`
+    *)
     | Assignment (e1, e2) -> (
         match step e1 table mem with
         | (Value (VLocation l), table1, mem1, r1) ->
@@ -303,7 +354,19 @@ let rec step (e : term) (table : symbols) (mem : memory)
             })
     )
 
-    (** BinaryOperation: operações binárias *)
+    (** BinaryOperation (bop, e1, e2): 
+        operações binárias
+        
+        avaliação da esq -> dir.
+        avalia e1 até que seja um valor `v1`
+        e1 -> e1' => e1 op e2 -> e1' op e2  
+        
+        avalia e2 até que seja um valor `v2`
+        e2 -> e2' => v1 op e2 -> v1 op e2'
+        
+        então tenta avaliar `(bop v1 v2)` na função `apply_binop`
+        
+        e retorna o resultado.*)
     | BinaryOperation (op, e1, e2) -> (
         match step e1 table mem with
         | (Value v1, table1, mem1, r1) ->
@@ -313,26 +376,31 @@ let rec step (e : term) (table : symbols) (mem : memory)
                 (Value result, table2, mem2, {
                     name = "E-BinOp";
                     pre = "";
-                    post = string_of_value v1 ^ " " ^ string_of_binary_operator op ^ " " ^ 
-                           string_of_value v2 ^ " → " ^ string_of_value result;
+                    post =  string_of_value v1 ^ " " ^ string_of_binary_operator op ^ " " ^ 
+                            string_of_value v2 ^ " → " ^ string_of_value result;
                 })
             | (Term e2', table2, mem2, r2) ->
                 (Term (BinaryOperation (op, term_of_value_exn v1, e2')), table2, mem2, {
                     name = "E-BinOp-Step-R";
                     pre = "";
                     post = string_of_value v1 ^ " " ^ string_of_binary_operator op ^ " " ^ 
-                           ast_of_term e2' ^ " → ...";
+                            ast_of_term e2' ^ " → ...";
                 }))
         | (Term e1', table1, mem1, r1) ->
             (Term (BinaryOperation (op, e1', e2)), table1, mem1, {
                 name = "E-BinOp-Step-L";
                 pre = "";
                 post = ast_of_term e1' ^ " " ^ string_of_binary_operator op ^ " " ^ 
-                       ast_of_term e2 ^ " → ...";
+                        ast_of_term e2 ^ " → ...";
             })
     )
 
-    (** Conditional: if-then-else *)
+    (** Conditional: if e1 then e2 else e3
+        
+        se `e1` não for um valor, então avalie-o até que seja.
+        se `e1` for um valor, então verifique se
+                `e1 = VBoolean true` ou `e1 = VBoolean false`
+        e retorne `e2` ou `e3`, respectivamente. *)
     | Conditional (cond, e1, e2) -> (
         match step cond table mem with
         | (Value (VBoolean true), table1, mem1, r) ->
@@ -361,7 +429,20 @@ let rec step (e : term) (table : symbols) (mem : memory)
             })
     )
 
-    (** Sequence: sequência *)
+    (** e1; e2 Sequência de comandos
+        Sequence (e1, e2)
+        Em uma sequência, esperamos que o primeiro termo seja avaliado inteiramente até tornar-se Unit.
+        Isto é assim porque queremos que os componentes de uma sequência sejam comando imperativos que terminam em Unit.
+        O tipo de `e1; e2` é o tipo daquilo que virá em `e2`. A avaliação de `e1; e2` -> `Unit; e2` -> `e2`
+
+        São comandos que terminam em unit:
+            1.  while e1 do e2
+            2.  e1 := e2        (atribuição, assignment)
+            3.  unit            (sic)
+    
+        Tipo: e1 : Unit, e2 : T => Sequence(e1, e2) : T
+
+        Avaliação: Se e1 -> Unit, então Sequence(Unit, e2) -> e2 *)
     | Sequence (e1, e2) -> (
         match step e1 table mem with
         | (Value VUnit, table1, mem1, r) ->
@@ -384,14 +465,26 @@ let rec step (e : term) (table : symbols) (mem : memory)
             })
     )
 
-    (** While: expansão para if *)
+    (** while e1 do e2
+    O comando while é expandido da seguinte forma na avaliação:
+    While (e1, e2) -> Conditional (e1, 
+                                    Sequence (e2, 
+                                            While (e1, e2)), 
+                                    Unit)
+
+    Se a condição do while (cond, e1) for verdadeira, então faça e2 (body)
+    e depois faça while (e1, e2) de novo. Se a condição do while (cond, e1)
+    for falsa, então Unit, fim do laço.
+
+    Tipo: e1 : Bool, e2 : T => While(e1, e2) : Unit
+    *)
     | While (cond, body) ->
         let expanded = Conditional (cond, Sequence (body, While (cond, body)), Unit) in
         (Term expanded, table, mem, {
             name = "E-While-Expand";
             pre = "";
-            post = "while " ^ ast_of_term cond ^ " do " ^ ast_of_term body ^ 
-                   " → if " ^ ast_of_term cond ^ " then (" ^ ast_of_term body ^ "; while ...) else ()";
+            post =  "while " ^ ast_of_term cond ^ " do " ^ ast_of_term body ^ 
+                    " → if " ^ ast_of_term cond ^ " then (" ^ ast_of_term body ^ "; while ...) else ()";
         })
 
     (** Erro: termo não reconhecido *)

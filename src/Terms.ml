@@ -16,8 +16,8 @@
 
     3.  If (e1, e2, e3) = Conditional (e1, e2, e3)
     Tipo: e1 : Bool, e2 : T, e3 : T   [com T =T] => If(e1, e2, e3) : T
-    Eval: se e1 -> VBoolean true, então If(e1, e2, e3) -> e2
-          se e1 -> VBoolean false, então If(e1, e2, e3) -> e3
+    Eval:   se e1 -> VBoolean true, então If(e1, e2, e3) -> e2
+            se e1 -> VBoolean false, então If(e1, e2, e3) -> e3
     
     4.  Operações Binárias (bop, e1, e2) = BinaryOperation (bop, e1, e2)
     Tipo: e1 : T, e2 : T => bop : T'  [o tipo do resultado depende da operação;]
@@ -27,7 +27,7 @@
     O comando while é expandido da seguinte forma na avaliação:
     While (e1, e2) -> Conditional (e1, 
                                     Sequence (e2, 
-                                              While (e1, e2)), 
+                                            While (e1, e2)), 
                                     Unit)
 
     Se a condição do while (cond, e1) for verdadeira, então faça e2 (body)
@@ -42,7 +42,7 @@
         Isto é assim porque queremos que os componentes de uma sequência sejam comando imperativos que terminam em Unit.
         O tipo de `e1; e2` é o tipo daquilo que virá em `e2`. A avaliação de `e1; e2` -> `Unit; e2` -> `e2`
 
-          São comandos que terminam em unit:
+        São comandos que terminam em unit:
             1.  while e1 do e2
             2.  e1 := e2        (atribuição, assignment)
             3.  unit            (sic)
