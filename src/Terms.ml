@@ -5,14 +5,23 @@
 
     1.  VALORES
     São termos (expressões) EQUIVALENTES A valores (isto é, formais normais ou presas/stuck):
-      `Integer`, `Boolean`, `Unit`, `Location`
-      Estes valores são tipados imadiatamente para os tipos:
-        `Int`, `Bool`, `Unit`, `Reference Int`
-      e são avaliados imediatamente para os valores:
-        `VInteger`, `VBoolean`, `VUnit`, `VLocation l`
-  
+        `Integer`, `Boolean`, `Unit`, `Location`
+        Estes valores são tipados imadiatamente para os tipos:
+            `Int`, `Bool`, `Unit`, `Reference Int`
+        e são avaliados imediatamente para os valores:
+            `VInteger`, `VBoolean`, `VUnit`, `VLocation l`
+    
     2.  Identificadores (variáveis)
-    `Identifier x` (x:string) representa um identificador de variável.
+    Identifier x
+        
+        Um identificador `x` é avaliado para a POSIÇÃO NA MEMÓRIA que este ocupa.
+        Nesta implementação, os identificadores são armazenados na tabela de símbolos.
+        A tabela de símbolos é uma lista de pares (identificador, posição na memória ocupada pelo identificador)
+        
+        Então a avaliação de `Identifier x` é
+            1.  Verifique se `x` está na tabela de símbolos.
+            2.  Se estiver, avalie para a posição `VLocation l` que este ocupa na memória
+            3.  Senão, produza um erro de unbound identifier 
 
     3.  If (e1, e2, e3) = Conditional (e1, e2, e3)
     Tipo: e1 : Bool, e2 : T, e3 : T   [com T =T] => If(e1, e2, e3) : T
@@ -74,29 +83,19 @@
                 x := 2; ...
     
     9.  new e
-        New (e)
-        A expressão new e irá
-            1.  Avaliar `e` até que seja um valor
-            2.  Criar uma nova posição na memória
-            3.  Associar o valor `v1` à nova posição de memória `l`,
-            4.  Substituir toda ocorrência de `x` em `e2` por `v1`.
-            5.  Avaliar para a posição `l` na memória
+        Alocação de memória
+        
+        Se `e` for avaliado para um valor `v`, aloque memória para `v` e retorne a posição da memória `l` alocada.
+        
+        1.  Se `e` for um valor, então
+            1.  Aloque memória para `v` (peça a memória por uma nova posição `l` usando a função `where mem`
+            2.  Coloque o novo valor `v` na memória na nova posição `l`
+            3.  Retorne `VLocation l`
 
     10. !e
-        Dereference (e)
-        A expressão !e irá
-            1.  Avaliar `e` até que seja um valor
-            2.  Se `e` é um (Identifier x`, então ...
+        !e: acessa memória
 
-    11. ()
-        Unit
-
-    12. e1; e2
-        Sequence (e1, e2)
-    
-    13. l
-        Location (l)
-    
+        Se `e` for avaliado para uma localização `l`, então retorne o conteúdo da memória na localização `l`
 *)
 
 open Types
@@ -117,7 +116,7 @@ type term =
     | Sequence of term * term                       (* e1; e2 *)
     | Location of int                               (* l, local de memória *)
 and binary_operator = 
-      | Add | Sub | Mul | Div                       (* operadores aritméticos *)
+      | Add | Sub | Mul | Div | Mod                 (* operadores aritméticos *)
       | Eq  | Neq | Lt  | Leq | Gt | Geq            (* operadores relacionais *)
       | And | Or                                    (* operadores lógicos *)
 ;;

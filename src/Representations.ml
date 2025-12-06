@@ -22,6 +22,7 @@ let string_of_binary_operator = function
     | Add -> "+"
     | Sub -> "-"
     | Mul -> "*"
+    | Mod -> "mod"
     | Div -> "/"
     | Eq  -> "="
     | Neq -> "<>"

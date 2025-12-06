@@ -111,11 +111,7 @@ let interpret (e : term) : unit =
   match t with
   | ErrorType s -> print_endline s
   | t ->
-    begin
-      section "Type Inference";
-      print_just_typeinfer e t t_rules;
-      section "Evaluation";
-        begin
+      begin
           let (valor, tabela_de_simbolos, memoria, regras_de_avaliacao) = stepn e [] [] 100 in 
             print_endline "------------------------------------------";
             print_endline (ast_of_term e);
@@ -129,5 +125,5 @@ let interpret (e : term) : unit =
             print_endline (string_of_evaluation regras_de_avaliacao);
             print_endline "------------------------------------------";
             print_endline (string_of_mem memoria);
-          end
-    end
+            print_endline "------------------------------------------"
+      end

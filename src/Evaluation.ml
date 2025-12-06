@@ -63,6 +63,8 @@ let apply_binop bop v1 v2 =
         | (Mul, VInteger a, VInteger b) -> VInteger (a * b)
         | (Div, VInteger _, VInteger 0) -> EvaluationError "Divisão por zero"
         | (Div, VInteger a, VInteger b) -> VInteger (a / b)
+        | (Mod, VInteger _, VInteger 0) -> EvaluationError "Divisão por zero"
+        | (Mod, VInteger a, VInteger b) -> VInteger (a mod b)
 
         | (Eq, VInteger a, VInteger b)  -> VBoolean (a = b)
         | (Neq, VInteger a, VInteger b) -> VBoolean (a <> b)
@@ -169,7 +171,7 @@ let rec step (e : term) (table : symbols) (mem : memory)
 
     (** Identifier x
         
-        Um identificaro é avaliado para a POSIÇÃO NA MEMÓRIA que este ocupa.
+        Um identificador `x` é avaliado para a POSIÇÃO NA MEMÓRIA que este ocupa.
         Nesta implementação, os identificadores são armazenados na tabela de símbolos.
         A tabela de símbolos é uma lista de pares (identificador, posição na memória ocupada pelo identificador)
         

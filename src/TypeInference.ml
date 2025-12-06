@@ -40,6 +40,8 @@ let rec typeinfer (e: term) (env: ambiente) : tipo = (match e with
 
             | (Div, Int, Int) when e2 = Integer 0 -> ErrorType ("Divisão por zero\n\t[" ^ string_of_env env ^ "]")
             | (Div, Int, Int) -> Int
+            | (Mod, Int, Int) when e2 = Integer 0 -> ErrorType ("Divisão por zero\n\t[" ^ string_of_env env ^ "]")
+            | (Mod, Int, Int) -> Int
 
             (** op. binárias aritméticas relacionais *)
             | (Eq, Int, Int) | (Neq, Int, Int) | (Lt, Int, Int) | (Leq, Int, Int)
@@ -244,6 +246,19 @@ let infer (e: term) : tipo * type_inference = (
                         post = string_of_env env'' ^ " ⊢ '" ^ ast_of_term e ^ "' : Int";
                         } :: r2)
                 | Div, Int, Int -> (
+                    if e2 = Integer 0 then (ErrorType ("Divisão por zero\n\t[" ^ string_of_env env ^ "]"),  env'', {
+                        name = "T-Op" ^ string_of_binary_operator op ^ " Error";
+                        pre = string_of_env env'' ^ " ⊢ '" ^ ast_of_term e1 ^ "' : Int ∧ '" ^ ast_of_term e2 ^ "' : Int";
+                        post = ast_of_term e ^ " : " ^ string_of_tipo (ErrorType ("Divisão por zero\n\t[" ^ string_of_env env ^ "]"));
+                        } :: r2)
+                    else (Int,  env'', {
+                        name = "T-Op" ^ string_of_binary_operator op ^ " Error";
+                        pre = string_of_env env'' ^ " ⊢ '" ^ ast_of_term e1 ^ "' : Int ∧ '" ^ ast_of_term e2 ^ "' : Int";
+                        post = string_of_env env'' ^ " ⊢ '" ^ ast_of_term e ^ "' : Int";
+                        } :: r2)
+                )
+
+                | Mod, Int, Int -> (
                     if e2 = Integer 0 then (ErrorType ("Divisão por zero\n\t[" ^ string_of_env env ^ "]"),  env'', {
                         name = "T-Op" ^ string_of_binary_operator op ^ " Error";
                         pre = string_of_env env'' ^ " ⊢ '" ^ ast_of_term e1 ^ "' : Int ∧ '" ^ ast_of_term e2 ^ "' : Int";
