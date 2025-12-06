@@ -9,8 +9,6 @@ open Types
 open Terms
 open Constructions
 
-(* -------------------------------------------------------------------------- *)
-
 let string_of_value = function
     | VInteger n        -> string_of_int n
     | VBoolean b        -> string_of_bool b
