@@ -18,6 +18,14 @@ open TypeInference          (*  inferência estática de tipos para `L2` *)
     --- 
 *)
 
+(** converte valor para termo, falha com exceção se não for possível *)
+let term_of_value_exn = function
+    | VInteger n -> Integer n
+    | VBoolean b -> Boolean b
+    | VUnit -> Unit
+    | VLocation l -> Location l
+    | EvaluationError s -> failwith ("Não pode converter erro para termo: " ^ s)
+
 (** verifica se um termo representa um valor *)
 let is_value_term = function
     | Integer _ | Boolean _ | Unit | Location _ -> true
@@ -27,17 +35,16 @@ let is_value_term = function
 let value_of_term = function
     | Integer n -> Some (VInteger n)
     | Boolean b -> Some (VBoolean b)
-    | Unit      -> Some VUnit
-    | Location l ->
-        (* location is a value but its runtime value is found in memory *)
-        None
+    | Unit -> Some VUnit
+    | Location l -> Some (VLocation l)
     | _ -> None
 
 (** converte um valor para um termo *)
 let term_of_value = function
     | VInteger n -> Some (Integer n)
     | VBoolean b -> Some (Boolean b)
-    | VUnit      -> Some Unit
+    | VUnit -> Some Unit
+    | VLocation l -> Some (Location l)
     | _ -> None
 
 (** ---
@@ -75,70 +82,32 @@ let apply_binop bop v1 v2 =
 
 (** substitui toda ocorrência de um termo `x` por um valor `v`
     em um termo `e`.
-
-    uso: substitute (Identifier "x") v e
 *)
-let rec substitute (x : term) (v : value) (e : term) : term =
+let rec substitute (x : string) (v : value) (e : term) : term =
     match e with
-    (** caso-base: é exatamente (Identifier s) e s é igual ao nome em x *)
-    | Identifier s -> (match x with
-        | Identifier s2 when s = s2 -> (
-            match term_of_value v with
-            | Some t -> t
-            | None -> e  (* não deveria acontecer *)
-        )
-        | _ -> e)
-    (** valores  *)
+    | Identifier s when s = x -> term_of_value_exn v
+    | Identifier s -> Identifier s
     | Integer n -> Integer n
     | Boolean b -> Boolean b
     | Unit -> Unit
     | Location l -> Location l
-
     | BinaryOperation (op, e1, e2) ->
         BinaryOperation (op, substitute x v e1, substitute x v e2)
-
     | Conditional (e1, e2, e3) ->
-        Conditional (
-            substitute x v e1,
-            substitute x v e2,
-            substitute x v e3
-        )
-
+        Conditional (substitute x v e1, substitute x v e2, substitute x v e3)
     | Let (id, t, e1, e2) ->
-        (** regra usual da substituição:
-            - substitui em e1 SEM restrições
-            - substitui em e2 **somente se** o id do Let não é o x
-        *)
-        (match x with
-            | Identifier xname ->
-                if id = xname then
-                (** sombra: x foi redefinido neste let, não substituímos em e2 *)
-                Let (id, t,
-                        substitute x v e1,
-                        e2)
-                else
-                Let (id, t,
-                        substitute x v e1,
-                        substitute x v e2)
-        | _ ->
-            Let (id, t,
-                substitute x v e1,
-                substitute x v e2)
-        )
-
+        if id = x then
+            Let (id, t, substitute x v e1, e2)
+        else
+            Let (id, t, substitute x v e1, substitute x v e2)
     | Sequence (e1, e2) ->
         Sequence (substitute x v e1, substitute x v e2)
-
     | While (cond, body) ->
         While (substitute x v cond, substitute x v body)
-
     | Assignment (e1, e2) ->
         Assignment (substitute x v e1, substitute x v e2)
-
     | Dereference e1 -> Dereference (substitute x v e1)
-
     | New e1 -> New (substitute x v e1)
-    ;;
 
 (** tipo resultado de passo de avaliação
     O resultado de um passo de avaliação sobre um termo `e` pode ser
@@ -293,113 +262,58 @@ let rec step    (e     :     term)
                     retorne `e2`, ..., etc.
         *)
         | Let (x, t, e1, e2) -> (
-            (** verificar se o tipo de `e1` é o mesmo que `t` *)
-            let (t1, _) = infer e1 in
-            if (t <> t1) then (Value (EvaluationError ("e1=" ^ ast_of_term e1 ^ ", t1=" ^ string_of_tipo t1 ^ " <> t=" ^ string_of_tipo t
-                                                        ^ " em e=" ^ ast_of_term e)), table, mem, {
-                                                        name = "E-Let Error 1";
-                                                        pre  = "";
-                                                        post = "";
-                                                    })
-            else if not (is_value_term e1) then 
-                (match step e1 table mem with
-                    | Term e1', _, _, _ -> step (Let (x, t, e1', e2)) table mem
-                    | Value v, _, _, _ -> Value (EvaluationError "Erro ao avaliar um termo"), table, mem, {
-                        name = "E-Let Error 2";
-                        pre  = "";
-                        post = "";
+            (** Se e1 não é valor, avaliamos e1 primeiro *)
+            if not (is_value_term e1) then
+                match step e1 table mem with
+                | (Term e1', table', mem', r) -> 
+                    (Term (Let (x, t, e1', e2)), table', mem', {
+                        name = "E-Let-Step";
+                        pre = string_of_rule r;
+                        post = ast_of_term (Let (x, t, e1', e2)) ^ ", " ^ string_of_mem mem' ^ " -> ...";
+                    })
+                | (Value v, table', mem', r) -> 
+                    (Term (Let (x, t, (match term_of_value v with Some t -> t | None -> e1), e2)), 
+                    table', mem', {
+                        name = "E-Let-Value";
+                        pre = string_of_rule r;
+                        post = ast_of_term e ^ ", " ^ string_of_mem mem' ^ " -> ...";
                     })
             else
-                (** criar uma entrada na tabela de símbolos para `x` e armazenar `e1` na memória em `l` *)
-                let l = where mem in
-                let table' = extend x l table in
-                match value_of_term e1 with
-                | Some v1 ->
-                    let mem' = set l v1 mem in
-                    let e2' = substitute (Identifier x) v1 e2 in
-                    step e2' table' mem'
-                | None -> Value (EvaluationError "Não foi possível obter valor de e1"), table, mem, {
-                    name = "E-Let Error 3";
-                    pre  = "";
-                    post = "";
-                }
-        )
-
-        (**
-            Atribuição
-            Assignment e1 e2 
-            e1 := e2
-
-            e1 deve avaliar para uma variável (Identifier x)
-            e2 deve avaliar para um valor
-            
-        Ordem de avaliação da esquerda para a direita
-        Se `e1` não for um valor, então avalie-o até que seja;
-        Se `e1` = `v1` for um valor, então decide se
-            `v1` é um identificador (variável, `Identifier x`):
-                Se `e2` não for um valor, então avalie-o até que seja;
-                Se `e2` = `v2` for um valor, então atualize `mem[x]` com `v2` e retorne Unit;
-            `v1` é um local de memória (`Location l`):
-                Se `e2` não for um valor, então avalie-o até que seja;
-        Assignment: step left, right; when lhs identifies a location update memory and become Unit *)
-        | Assignment (e1, e2) ->
-            (match e1 with
-                (** `e1` = `x` Identifier x *)
-                | Identifier x -> (
-                    (** verificar se `x` é um identificador (variável) na tabela de símbolos *)
-                    if not (is_bound x table) then (
-                        (Value (EvaluationError ("Identificador nao declarado: `" ^ x ^ "`")), table, mem, {
-                            name    = "E-Atr Error 1";
-                            pre     = "";
-                            post    = ast_of_term e ^ ", " ^ string_of_mem mem ^ " -> $" ^ string_of_value (EvaluationError ("Identificador nao declarado: `" ^ x ^ "`")) ^ ", " ^ string_of_mem mem;
-                    }))
-                    (* se `e2` não for um valor, então avalie-o até que seja *)
-                    else(                
-                        if not (is_value_term e2) then (match step e2 table mem with
-                            | Term e2', _, _, _ -> step (Assignment (Identifier x, e2')) table mem
-                            | Value v, _, _, _ -> Value (EvaluationError "Erro ao avaliar um termo"), table, mem, {
-                                name    = "E-Atr Error 2";
-                                pre     = "";
-                                post    = ast_of_term e ^ ", " ^ string_of_mem mem ^ " -> $" ^ string_of_value v ^ ", " ^ string_of_mem mem;
-                            }
-                        )
-                        else (
-                            (* `e2` = `v2` é um valor, então tente descobrir a posição na memória ocupada pelo Identificador x  *)
-                            (match search x table with
-                                (** `v2` é um identificador (variável) que não existe na memória, erro. *)
-                                | None -> Value (EvaluationError ("Atribuição: identificador '" ^ x ^ "' nao encontrado na memória " ^ string_of_mem  mem)), table, mem, {
-                                    name    = "E-Atr 1";
-                                    pre     = "v2 nao tinha um domínio na memória " ^ string_of_mem mem;
-                                    post    = ast_of_term e ^ ", " ^ string_of_mem mem ^ " -> $" ^ string_of_value (EvaluationError "Erro ao extrair um valor da memória") ^ ", " ^ string_of_mem mem;
-                                }
-
-                                (** `v2` é um identificador (variável) que existe na memória, e sua posição é `loc` *)
-                                | Some loc ->
-                                    (** extraia o valor de `e2` *)
-                                    (match value_of_term e2 with
-                                    | Some vv ->
-                                        (** atualize `mem[x]` com `v2` e retorne Unit *)
-                                        let mem' = set loc vv mem in
-                                        (Term Unit, table, mem', {
-                                            name    = "E-Atr 1";
-                                            pre     = "(Location " ^ string_of_int loc ^ ") está no domínio da memória " ^ string_of_mem mem;
-                                            post    = ast_of_term e ^ ", " ^ string_of_mem mem ^ " -> " ^ ast_of_term (Assignment (e1, e2)) ^ ", " ^ string_of_mem mem';
-                                        })
-                                    | None ->
-                                        (Value (EvaluationError ("Atribuição: nao foi possivel avaliar " ^ ast_of_term e2)), table, mem, {
-                                            name    = "E-Atr 1";
-                                            pre     = "(Location " ^ string_of_int loc ^ ") está no domínio da memória " ^ string_of_mem mem;
-                                            post    = ast_of_term e ^ ", " ^ string_of_mem mem ^ " -> " ^ ast_of_term (Assignment (e1, e2)) ^ ", " ^ string_of_mem mem;
-                                    })))
-                        ))
-                    )
-
+                (** e1 é um valor - agora processamos baseado no tipo *)
+                match t with
+                | Reference _ -> 
+                    (** Para referências: e1 deve ser uma localização *)
+                    (match e1 with
+                    | Location l -> 
+                        let table' = extend x l table in
+                        (Term e2, table', mem, {
+                            name = "E-Let-Ref";
+                            pre = "";
+                            post = ast_of_term e ^ ", " ^ string_of_mem mem ^ " -> " ^ ast_of_term e2 ^ ", " ^ string_of_mem mem;
+                        })
+                    | _ -> 
+                        (Value (EvaluationError "O valor para uma referência deve ser uma localização"), table, mem, {
+                            name = "E-Let-Ref-Error";
+                            pre = "";
+                            post = "";
+                        }))
                 | _ -> 
-                    (Value (EvaluationError ("Atribuição: nao foi possivel avaliar " ^ ast_of_term e1)), table, mem, {
-                        name    = "E-Atr 1";
-                        pre     = "";
-                        post    = ast_of_term e ^ ", " ^ string_of_mem mem ^ " -> " ^ ast_of_term (Assignment (e1, e2)) ^ ", " ^ string_of_mem mem;
-                }))
+                    (** Para tipos não-referência: substituímos x por e1 em e2 *)
+                    match value_of_term e1 with
+                    | Some v1 ->
+                        let e2' = substitute x v1 e2 in
+                        (Term e2', table, mem, {
+                            name = "E-Let-Subst";
+                            pre = "";
+                            post = ast_of_term e ^ ", " ^ string_of_mem mem ^ " -> " ^ ast_of_term e2' ^ ", " ^ string_of_mem mem;
+                        })
+                    | None ->
+                        (Value (EvaluationError "Não foi possível obter valor de e1"), table, mem, {
+                            name = "E-Let-Value-Error";
+                            pre = "";
+                            post = "";
+                        })
+        )
                 
 
         (**
@@ -460,43 +374,43 @@ let rec step    (e     :     term)
                 defina um novo local na memória
                 associe o valor de `e` ao local na memória
             a avaliação de `new e` produz o local da memória `l` *)
-        | New e -> (
-            (** se `e` não for um valor, avalie-o até que seja um termo *)
-            if not (is_value_term e) then (match step e table mem with
-                | Term e', _, _, _ -> step (New e') table mem
-                
-                (** erro, isto não pode acontecer *)
-                | Value v, _, _, _ -> (
-                    Value (EvaluationError "Erro ao avaliar um termo"), table, mem, {
-                        name    = "E-New Error 1";
-                        pre     = "";
-                        post    = ast_of_term e ^ ", " ^ string_of_mem mem ^ " -> $" ^ string_of_value v ^ ", " ^ string_of_mem mem;
-                    }
-                )
-            )
-
-            (** se `e` for um valor, defina um novo local na memória e associe o valor de `e` ao local na memória *)
-            else
-                (* ordene a memória por posição *)
-                let mem' = sort mem in
-
-                (* associe `v` a um novo local na memória *)
-                let l = where mem' in match value_of_term e with
-                | Some v -> 
-                    let mem'' = set l v mem' in
-
-                    (* retorne `l` enquanto termo *)
-                    (Term (Location l), table, mem'', {
-                        name    = "E-New 1";
-                        pre     = "";
-                        post    = ast_of_term e ^ ", " ^ string_of_mem mem ^ " -> " ^ ast_of_term (Location l) ^ ", " ^ string_of_mem mem''
-                    })
-                | None -> Value (EvaluationError ("Nao foi possivel avaliar " ^ ast_of_term e)),
-                    table, mem, {
-                        name = "E-New Error";
-                        pre  = "";
-                        post = "";
-                    }
+            | New e -> (
+                if not (is_value_term e) then
+                    match step e table mem with
+                    | (Term e', table', mem', r) -> 
+                        (Term (New e'), table', mem', {
+                            name = "E-New-Step";
+                            pre = string_of_rule r;
+                            post = ast_of_term (New e') ^ ", " ^ string_of_mem mem' ^ " -> ...";
+                        })
+                    | (Value v, table', mem', r) ->
+                        (** Se e já é um valor, alocamos memória *)
+                        let mem_sorted = sort mem' in
+                        let l = where mem_sorted in
+                        let mem_new = set l v mem_sorted in
+                        (Term (Location l), table', mem_new, {
+                            name = "E-New";
+                            pre = "";
+                            post = ast_of_term e ^ ", " ^ string_of_mem mem' ^ " -> " ^ ast_of_term (Location l) ^ ", " ^ string_of_mem mem_new;
+                        })
+                else
+                    (** e é um valor, alocamos memória *)
+                    match value_of_term e with
+                    | Some v ->
+                        let mem_sorted = sort mem in
+                        let l = where mem_sorted in
+                        let mem_new = set l v mem_sorted in
+                        (Term (Location l), table, mem_new, {
+                            name = "E-New";
+                            pre = "";
+                            post = ast_of_term e ^ ", " ^ string_of_mem mem ^ " -> " ^ ast_of_term (Location l) ^ ", " ^ string_of_mem mem_new;
+                        })
+                    | None ->
+                        (Value (EvaluationError "Não foi possível obter valor para new"), table, mem, {
+                            name = "E-New-Error";
+                            pre = "";
+                            post = "";
+                        })
             )
 
         
@@ -556,8 +470,8 @@ let rec step    (e     :     term)
         
         (** while e1 do e2
             comando while é avaliado expandindo-o para um if com e1, e2 e Unit
-            *)
-        | While (cond, body) ->
+        *)
+        | While (cond, body) -> (
             (** avaliar a condição *)
             if not (is_value_term cond) then
                 (match step cond table mem with
@@ -584,6 +498,9 @@ let rec step    (e     :     term)
                         pre = "";
                         post = "";
                     })
+        )
+
+
         (** operações binárias:
         avaliação da esquerda para a direita:
 
@@ -659,22 +576,15 @@ let rec step    (e     :     term)
     retorna sempre      um valor (forma normal, ou erro),
             além de     tabela de símbolos e memória, possivelmente atualizadas        
 *)
-let rec stepn       (e       :       term)
-                    (mem    :     memory)
-                    (table  :    symbols)
-                    (limit  :        int)
-                    (rules  : evaluation)
-                        :   (value * symbols * memory * evaluation) =
-    if (limit <= 0) then ((EvaluationError "limite de passos atingido"), table, mem, rules)
-    else
-        try
-            match step e table mem with
-                (** debug: print *)
-                | (Value v, t, m, r)    -> print_endline (string_of_rule r); (v, t, m, r :: rules)
-                | (Term e', t, m, r)    -> print_endline (string_of_rule r);  stepn e' m t (limit - 1) (r :: rules)
-        with
-            | Failure s -> (EvaluationError ("failure: " ^ s), table, mem, rules)
-            | Invalid_argument s -> (EvaluationError ("argumento inválido: " ^ s), table, mem, rules)
-            | Out_of_memory -> (EvaluationError "SEM MEMÓRIA", table, mem, rules)
-            | exn -> (EvaluationError ("exceção levantada: " ^ Printexc.to_string exn), table, mem, rules)
-    ;;
+let rec stepn (e : term) (mem : memory) (table : symbols) (limit : int) 
+    : (value * symbols * memory * evaluation) =
+    if limit <= 0 then 
+        (EvaluationError "Limite de passos atingido", table, mem, [])
+    else(
+        print_endline ("termo atual: " ^ ast_of_term e);
+        (match step e table mem with
+        | (Value v, t, m, r) -> 
+            (v, t, m, [r])
+        | (Term e', t, m, r) -> 
+            let (v, t', m', rules) = stepn e' m t (limit - 1) in
+            (v, t', m', r :: rules)))

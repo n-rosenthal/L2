@@ -39,15 +39,11 @@ let fat n = Let ("x", Int, Integer n,
                   )))
 ;;
 
-let t_1 = (Let ("x", Int, Integer 1,
-            Let ("y", Reference Int, New (Integer 1), Unit)))                                                          
-;;
-
 let () =                            
   List.iteri
     (fun i e ->
         print_endline ("Teste " ^ string_of_int (i + 1));
         interpret e;
         print_endline "")
-    [t_1]
+    [fat 5]
 

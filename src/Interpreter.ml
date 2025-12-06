@@ -116,7 +116,7 @@ let interpret (e : term) : unit =
       print_just_typeinfer e t t_rules;
       section "Evaluation";
         begin
-          let (valor, tabela_de_simbolos, memoria, regras_de_avaliacao) = stepn e [] [] 100 [] in 
+          let (valor, tabela_de_simbolos, memoria, regras_de_avaliacao) = stepn e [] [] 100 in 
             print_endline "------------------------------------------";
             print_endline (ast_of_term e);
             print_endline (string_of_term e);
