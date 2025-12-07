@@ -203,14 +203,18 @@ $$
   \text{if } e_1' \text{ then } e_2 \text{ else } e_3
 }
 \quad(\text{E-IfStep})
+$$
 
+$$
 \frac{}{
   \text{if true then } e_2 \text{ else } e_3
   \;\to\;
   e_2
 }
 \quad(\text{E-IfTrue})
+$$
 
+$$
 \frac{}{
   \text{if false then } e_2 \text{ else } e_3
   \;\to\;
@@ -562,7 +566,7 @@ Para um `let` ser bem tipado:
 
 Regra formal:
 
-\[
+$$
 \frac{
   \Gamma \vdash e_1 : T
   \qquad
@@ -571,7 +575,7 @@ Regra formal:
   \Gamma \vdash \text{let } x : T = e_1 \text{ in } e_2 : U
 }
 \quad(\text{T-Let})
-\]
+$$
 
 A inferência de tipos em L2 inclui:
 - Para **tipos não-referência** (`int`, `bool`, `unit`): O tipo de `e1` deve coincidir exatamente com `T`.
@@ -587,7 +591,7 @@ A avaliação segue duas estratégias distintas:
 3. Avaliamos a expressão resultante.
 
 Regras:
-\[
+$$
 \frac{
   e_1 \to e_1'
 }{
@@ -596,9 +600,9 @@ Regras:
   \text{let } x : T = e_1' \text{ in } e_2
 }
 \quad(\text{E-Let-Step})
-\]
+$$
 
-\[
+$$
 \frac{
   \text{valor}(v_1) \quad T \neq \text{Ref}\;T'
 }{
@@ -607,7 +611,7 @@ Regras:
   e_2[v_1/x]
 }
 \quad(\text{E-Let-Subst})
-\]
+$$
 
 #### Para tipos **referência**:
 1. Avaliamos `e1` até obter um valor `VLocation(l)`.
@@ -615,7 +619,7 @@ Regras:
 3. Avaliamos `e2` com esta nova associação.
 
 Regra:
-\[
+$$
 \frac{
   \text{valor}(VLocation(l)) \quad T = \text{Ref}\;T'
 }{
@@ -624,7 +628,7 @@ Regra:
   e_2 \quad \text{(com } x \mapsto l \text{ no ambiente)}
 }
 \quad(\text{E-Let-Ref})
-\]
+$$
 
 Se `e1` não for uma localização quando `T` é referência, ocorre erro de tipo em tempo de execução.
 
