@@ -570,9 +570,9 @@ $$
 \frac{
   \Gamma \vdash e_1 : T
   \qquad
-  \Gamma, x:T \vdash e_2 : U
+  \Gamma, x:T \vdash e_2 : T'
 }{
-  \Gamma \vdash \text{let } x : T = e_1 \text{ in } e_2 : U
+  \Gamma \vdash \text{let } x : T = e_1 \text{ in } e_2 : T'
 }
 \quad(\text{T-Let})
 $$
@@ -591,12 +591,11 @@ A avaliação segue duas estratégias distintas:
 3. Avaliamos a expressão resultante.
 
 Regras:
-$$
-\frac{
+$$\frac{
   e_1 \to e_1'
 }{
   \text{let } x : T = e_1 \text{ in } e_2
-  \;\to\;
+  \ \to \
   \text{let } x : T = e_1' \text{ in } e_2
 }
 \quad(\text{E-Let-Step})
@@ -604,10 +603,10 @@ $$
 
 $$
 \frac{
-  \text{valor}(v_1) \quad T \neq \text{Ref}\;T'
+  \text{valor}(v_1) \quad T \neq \text{Ref} \ T'
 }{
   \text{let } x : T = v_1 \text{ in } e_2
-  \;\to\;
+  \ \to \
   e_2[v_1/x]
 }
 \quad(\text{E-Let-Subst})
