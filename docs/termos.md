@@ -591,6 +591,7 @@ A avaliação segue duas estratégias distintas:
 3. Avaliamos a expressão resultante.
 
 Regras:
+
 $$\frac{
   e_1 \to e_1'
 }{
@@ -607,9 +608,9 @@ $$
 }{
   \text{let } x : T = v_1 \text{ in } e_2
   \ \to \
-  e_2[v_1/x]
+  e_2\{v_1/x\}
 }
-\quad(\text{E-Let-Subst})
+\quad(\text{E-Let})
 $$
 
 #### Para tipos **referência**:

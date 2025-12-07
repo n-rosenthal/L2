@@ -74,4 +74,4 @@ A memória foi implementada em dois passos.
 
         Identifier x, new e, !e, e1 := e2, let x : t = e1 in e2
     
-    demonstrará os detalhes da implementação.
+    demonstrará os detalhes da implementação, bem como em `docs/termos.md` está descrita formalmente a avaliação e a inferência de tipo para termo em L_2.
