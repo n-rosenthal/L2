@@ -166,27 +166,44 @@ let is_even n =
 
 (* Potência: a^b *)
 let pow a b =
-  Let ("a", Int, Integer a,
-  Let ("b", Int, Integer b,
+  Let ("a", Reference Int, New (Integer a),
+  Let ("b", Reference Int, New (Integer b),
   Let ("acc", Reference Int, New (Integer 1),
+
     Sequence (
+
       While (
-        BinaryOperation (Gt, Identifier "b", Integer 0),
+        BinaryOperation (Gt,
+          Dereference (Identifier "b"),
+          Integer 0
+        ),
+
         Sequence (
           Assignment (
             Identifier "acc",
             BinaryOperation (Mul,
               Dereference (Identifier "acc"),
-              Identifier "a")
+              Dereference (Identifier "a")
+            )
           ),
-          Assignment (
-            Identifier "b",
-            BinaryOperation (Sub, Identifier "b", Integer 1)
+
+          Sequence (
+            Assignment (
+              Identifier "b",
+              BinaryOperation (Sub,
+                Dereference (Identifier "b"),
+                Integer 1
+              )
+            ),
+            Unit
           )
         )
       ),
+
       Dereference (Identifier "acc")
-    ))))
+    )
+
+  )))
 
 (**
   let x : int = 10 in
