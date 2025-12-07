@@ -1,0 +1,172 @@
+Teste 1
+------------------------------------------
+(Let (x, ref int, (New ((Integer 10))), (Let (y, ref int, (New ((Integer 0))), (Sequence ((While ((BinaryOperation (>, (Derefence ((Identifier x))), (Derefence ((Identifier y))))), (Sequence ((Assignment ((Identifier x), (BinaryOperation (-, (Derefence ((Identifier x))), (Integer 1))))), (Assignment ((Identifier y), (BinaryOperation (+, (Derefence ((Identifier y))), (Integer 1))))))))), (Derefence ((Identifier y)))))))))
+let x : ref int =
+  new
+    10
+in
+  let y : ref int =
+    new
+      0
+  in
+    (
+      while
+        (
+          !x
+          >
+          !y
+        )
+      do
+        (
+          x := (
+  !x
+  -
+  1
+);
+          y := (
+  !y
+  +
+  1
+)
+        );
+      !y
+    )
+------------------------------------------
+ : int
+[T-Int T  ⊢ '(Integer 10)' : Int]
+[T-New  ⊢ '(Integer 10)' : int  ⊢ '(Integer 10)' : ref int]
+[T-Int T (x: ref int)  ⊢ '(Integer 0)' : Int]
+[T-New (x: ref int)  ⊢ '(Integer 0)' : int (x: ref int)  ⊢ '(Integer 0)' : ref int]
+[T-Var Γ('x') : ref int (y: ref int) (x: ref int)  ⊢ '(Identifier x)' : ref int]
+[T-Deref (y: ref int) (x: ref int)  ⊢ '(Identifier x)' : int (y: ref int) (x: ref int)  ⊢ '(Identifier x)' : int]
+[T-Var Γ('y') : ref int (y: ref int) (x: ref int)  ⊢ '(Identifier y)' : ref int]
+[T-Deref (y: ref int) (x: ref int)  ⊢ '(Identifier y)' : int (y: ref int) (x: ref int)  ⊢ '(Identifier y)' : int]
+[T-Op> (y: ref int) (x: ref int)  ⊢ '(Derefence ((Identifier x)))' : Int ∧ '(Derefence ((Identifier y)))' : Int (y: ref int) (x: ref int)  ⊢ '(BinaryOperation (>, (Derefence ((Identifier x))), (Derefence ((Identifier y)))))' : Bool]
+[T-Var Γ('x') : ref int (y: ref int) (x: ref int)  ⊢ '(Identifier x)' : ref int]
+[T-Var Γ('x') : ref int (y: ref int) (x: ref int)  ⊢ '(Identifier x)' : ref int]
+[T-Deref (y: ref int) (x: ref int)  ⊢ '(Identifier x)' : int (y: ref int) (x: ref int)  ⊢ '(Identifier x)' : int]
+[T-Int T (y: ref int) (x: ref int)  ⊢ '(Integer 1)' : Int]
+[T-Op- (y: ref int) (x: ref int)  ⊢ '(Derefence ((Identifier x)))' : Int ∧ '(Integer 1)' : Int (y: ref int) (x: ref int)  ⊢ '(BinaryOperation (-, (Derefence ((Identifier x))), (Integer 1)))' : Int]
+[T-Atr (y: ref int) (x: ref int)  ⊢ '(Identifier x)' : int ∧ '(BinaryOperation (-, (Derefence ((Identifier x))), (Integer 1)))' : int (y: ref int) (x: ref int)  ⊢ '(Assignment ((Identifier x), (BinaryOperation (-, (Derefence ((Identifier x))), (Integer 1)))))' : Unit]
+[T-Var Γ('y') : ref int (y: ref int) (x: ref int)  ⊢ '(Identifier y)' : ref int]
+[T-Var Γ('y') : ref int (y: ref int) (x: ref int)  ⊢ '(Identifier y)' : ref int]
+[T-Deref (y: ref int) (x: ref int)  ⊢ '(Identifier y)' : int (y: ref int) (x: ref int)  ⊢ '(Identifier y)' : int]
+[T-Int T (y: ref int) (x: ref int)  ⊢ '(Integer 1)' : Int]
+[T-Op+ (y: ref int) (x: ref int)  ⊢ '(Derefence ((Identifier y)))' : Int ∧ '(Integer 1)' : Int (y: ref int) (x: ref int)  ⊢ '(BinaryOperation (+, (Derefence ((Identifier y))), (Integer 1)))' : Int]
+[T-Atr (y: ref int) (x: ref int)  ⊢ '(Identifier y)' : int ∧ '(BinaryOperation (+, (Derefence ((Identifier y))), (Integer 1)))' : int (y: ref int) (x: ref int)  ⊢ '(Assignment ((Identifier y), (BinaryOperation (+, (Derefence ((Identifier y))), (Integer 1)))))' : Unit]
+[T-Sequence (y: ref int) (x: ref int)  ⊢ '(Assignment ((Identifier x), (BinaryOperation (-, (Derefence ((Identifier x))), (Integer 1)))))' : Unit ∧ '(Assignment ((Identifier y), (BinaryOperation (+, (Derefence ((Identifier y))), (Integer 1)))))' : unit (y: ref int) (x: ref int)  ⊢ '(Sequence ((Assignment ((Identifier x), (BinaryOperation (-, (Derefence ((Identifier x))), (Integer 1))))), (Assignment ((Identifier y), (BinaryOperation (+, (Derefence ((Identifier y))), (Integer 1)))))))' : unit]
+[T-While (y: ref int) (x: ref int)  ⊢ '(BinaryOperation (>, (Derefence ((Identifier x))), (Derefence ((Identifier y)))))' : Bool ∧ '(Sequence ((Assignment ((Identifier x), (BinaryOperation (-, (Derefence ((Identifier x))), (Integer 1))))), (Assignment ((Identifier y), (BinaryOperation (+, (Derefence ((Identifier y))), (Integer 1)))))))' : Unit (y: ref int) (x: ref int)  ⊢ '(While ((BinaryOperation (>, (Derefence ((Identifier x))), (Derefence ((Identifier y))))), (Sequence ((Assignment ((Identifier x), (BinaryOperation (-, (Derefence ((Identifier x))), (Integer 1))))), (Assignment ((Identifier y), (BinaryOperation (+, (Derefence ((Identifier y))), (Integer 1)))))))))' : Unit]
+[T-Var Γ('y') : ref int (y: ref int) (x: ref int)  ⊢ '(Identifier y)' : ref int]
+[T-Deref (y: ref int) (x: ref int)  ⊢ '(Identifier y)' : int (y: ref int) (x: ref int)  ⊢ '(Identifier y)' : int]
+[T-Sequence (y: ref int) (x: ref int)  ⊢ '(While ((BinaryOperation (>, (Derefence ((Identifier x))), (Derefence ((Identifier y))))), (Sequence ((Assignment ((Identifier x), (BinaryOperation (-, (Derefence ((Identifier x))), (Integer 1))))), (Assignment ((Identifier y), (BinaryOperation (+, (Derefence ((Identifier y))), (Integer 1)))))))))' : Unit ∧ '(Derefence ((Identifier y)))' : int (y: ref int) (x: ref int)  ⊢ '(Sequence ((While ((BinaryOperation (>, (Derefence ((Identifier x))), (Derefence ((Identifier y))))), (Sequence ((Assignment ((Identifier x), (BinaryOperation (-, (Derefence ((Identifier x))), (Integer 1))))), (Assignment ((Identifier y), (BinaryOperation (+, (Derefence ((Identifier y))), (Integer 1))))))))), (Derefence ((Identifier y)))))' : int]
+[T-Let (y: ref int) (x: ref int)  ⊢ '(New ((Integer 0)))' : ref int ∧ '(Sequence ((While ((BinaryOperation (>, (Derefence ((Identifier x))), (Derefence ((Identifier y))))), (Sequence ((Assignment ((Identifier x), (BinaryOperation (-, (Derefence ((Identifier x))), (Integer 1))))), (Assignment ((Identifier y), (BinaryOperation (+, (Derefence ((Identifier y))), (Integer 1))))))))), (Derefence ((Identifier y)))))' : int (y: ref int) (x: ref int)  ⊢ '(Let (y, ref int, (New ((Integer 0))), (Sequence ((While ((BinaryOperation (>, (Derefence ((Identifier x))), (Derefence ((Identifier y))))), (Sequence ((Assignment ((Identifier x), (BinaryOperation (-, (Derefence ((Identifier x))), (Integer 1))))), (Assignment ((Identifier y), (BinaryOperation (+, (Derefence ((Identifier y))), (Integer 1))))))))), (Derefence ((Identifier y)))))))' : int]
+[T-Let (x: ref int)  ⊢ '(New ((Integer 10)))' : ref int ∧ '(Let (y, ref int, (New ((Integer 0))), (Sequence ((While ((BinaryOperation (>, (Derefence ((Identifier x))), (Derefence ((Identifier y))))), (Sequence ((Assignment ((Identifier x), (BinaryOperation (-, (Derefence ((Identifier x))), (Integer 1))))), (Assignment ((Identifier y), (BinaryOperation (+, (Derefence ((Identifier y))), (Integer 1))))))))), (Derefence ((Identifier y)))))))' : int (x: ref int)  ⊢ '(Let (x, ref int, (New ((Integer 10))), (Let (y, ref int, (New ((Integer 0))), (Sequence ((While ((BinaryOperation (>, (Derefence ((Identifier x))), (Derefence ((Identifier y))))), (Sequence ((Assignment ((Identifier x), (BinaryOperation (-, (Derefence ((Identifier x))), (Integer 1))))), (Assignment ((Identifier y), (BinaryOperation (+, (Derefence ((Identifier y))), (Integer 1))))))))), (Derefence ((Identifier y)))))))))' : int]
+
+------------------------------------------
+ = 5
+{E-Let-Ref  let x = ℓ0 in ...}
+{E-Let-Ref  let y = ℓ1 in ...}
+{E-Seq-Step  (Conditional ((BinaryOperation (>, (Derefence ((Identifier x))), (Derefence ((Identifier y))))), (Sequence ((Sequence ((Assignment ((Identifier x), (BinaryOperation (-, (Derefence ((Identifier x))), (Integer 1))))), (Assignment ((Identifier y), (BinaryOperation (+, (Derefence ((Identifier y))), (Integer 1))))))), (While ((BinaryOperation (>, (Derefence ((Identifier x))), (Derefence ((Identifier y))))), (Sequence ((Assignment ((Identifier x), (BinaryOperation (-, (Derefence ((Identifier x))), (Integer 1))))), (Assignment ((Identifier y), (BinaryOperation (+, (Derefence ((Identifier y))), (Integer 1))))))))))), ())); (Derefence ((Identifier y)))}
+{E-Seq-Step  (Sequence ((Sequence ((Assignment ((Identifier x), (BinaryOperation (-, (Derefence ((Identifier x))), (Integer 1))))), (Assignment ((Identifier y), (BinaryOperation (+, (Derefence ((Identifier y))), (Integer 1))))))), (While ((BinaryOperation (>, (Derefence ((Identifier x))), (Derefence ((Identifier y))))), (Sequence ((Assignment ((Identifier x), (BinaryOperation (-, (Derefence ((Identifier x))), (Integer 1))))), (Assignment ((Identifier y), (BinaryOperation (+, (Derefence ((Identifier y))), (Integer 1))))))))))); (Derefence ((Identifier y)))}
+{E-Seq-Step  (Sequence ((Assignment ((Identifier y), (BinaryOperation (+, (Derefence ((Identifier y))), (Integer 1))))), (While ((BinaryOperation (>, (Derefence ((Identifier x))), (Derefence ((Identifier y))))), (Sequence ((Assignment ((Identifier x), (BinaryOperation (-, (Derefence ((Identifier x))), (Integer 1))))), (Assignment ((Identifier y), (BinaryOperation (+, (Derefence ((Identifier y))), (Integer 1))))))))))); (Derefence ((Identifier y)))}
+{E-Seq-Step  (While ((BinaryOperation (>, (Derefence ((Identifier x))), (Derefence ((Identifier y))))), (Sequence ((Assignment ((Identifier x), (BinaryOperation (-, (Derefence ((Identifier x))), (Integer 1))))), (Assignment ((Identifier y), (BinaryOperation (+, (Derefence ((Identifier y))), (Integer 1))))))))); (Derefence ((Identifier y)))}
+{E-Seq-Step  (Conditional ((BinaryOperation (>, (Derefence ((Identifier x))), (Derefence ((Identifier y))))), (Sequence ((Sequence ((Assignment ((Identifier x), (BinaryOperation (-, (Derefence ((Identifier x))), (Integer 1))))), (Assignment ((Identifier y), (BinaryOperation (+, (Derefence ((Identifier y))), (Integer 1))))))), (While ((BinaryOperation (>, (Derefence ((Identifier x))), (Derefence ((Identifier y))))), (Sequence ((Assignment ((Identifier x), (BinaryOperation (-, (Derefence ((Identifier x))), (Integer 1))))), (Assignment ((Identifier y), (BinaryOperation (+, (Derefence ((Identifier y))), (Integer 1))))))))))), ())); (Derefence ((Identifier y)))}
+{E-Seq-Step  (Sequence ((Sequence ((Assignment ((Identifier x), (BinaryOperation (-, (Derefence ((Identifier x))), (Integer 1))))), (Assignment ((Identifier y), (BinaryOperation (+, (Derefence ((Identifier y))), (Integer 1))))))), (While ((BinaryOperation (>, (Derefence ((Identifier x))), (Derefence ((Identifier y))))), (Sequence ((Assignment ((Identifier x), (BinaryOperation (-, (Derefence ((Identifier x))), (Integer 1))))), (Assignment ((Identifier y), (BinaryOperation (+, (Derefence ((Identifier y))), (Integer 1))))))))))); (Derefence ((Identifier y)))}
+{E-Seq-Step  (Sequence ((Assignment ((Identifier y), (BinaryOperation (+, (Derefence ((Identifier y))), (Integer 1))))), (While ((BinaryOperation (>, (Derefence ((Identifier x))), (Derefence ((Identifier y))))), (Sequence ((Assignment ((Identifier x), (BinaryOperation (-, (Derefence ((Identifier x))), (Integer 1))))), (Assignment ((Identifier y), (BinaryOperation (+, (Derefence ((Identifier y))), (Integer 1))))))))))); (Derefence ((Identifier y)))}
+{E-Seq-Step  (While ((BinaryOperation (>, (Derefence ((Identifier x))), (Derefence ((Identifier y))))), (Sequence ((Assignment ((Identifier x), (BinaryOperation (-, (Derefence ((Identifier x))), (Integer 1))))), (Assignment ((Identifier y), (BinaryOperation (+, (Derefence ((Identifier y))), (Integer 1))))))))); (Derefence ((Identifier y)))}
+{E-Seq-Step  (Conditional ((BinaryOperation (>, (Derefence ((Identifier x))), (Derefence ((Identifier y))))), (Sequence ((Sequence ((Assignment ((Identifier x), (BinaryOperation (-, (Derefence ((Identifier x))), (Integer 1))))), (Assignment ((Identifier y), (BinaryOperation (+, (Derefence ((Identifier y))), (Integer 1))))))), (While ((BinaryOperation (>, (Derefence ((Identifier x))), (Derefence ((Identifier y))))), (Sequence ((Assignment ((Identifier x), (BinaryOperation (-, (Derefence ((Identifier x))), (Integer 1))))), (Assignment ((Identifier y), (BinaryOperation (+, (Derefence ((Identifier y))), (Integer 1))))))))))), ())); (Derefence ((Identifier y)))}
+{E-Seq-Step  (Sequence ((Sequence ((Assignment ((Identifier x), (BinaryOperation (-, (Derefence ((Identifier x))), (Integer 1))))), (Assignment ((Identifier y), (BinaryOperation (+, (Derefence ((Identifier y))), (Integer 1))))))), (While ((BinaryOperation (>, (Derefence ((Identifier x))), (Derefence ((Identifier y))))), (Sequence ((Assignment ((Identifier x), (BinaryOperation (-, (Derefence ((Identifier x))), (Integer 1))))), (Assignment ((Identifier y), (BinaryOperation (+, (Derefence ((Identifier y))), (Integer 1))))))))))); (Derefence ((Identifier y)))}
+{E-Seq-Step  (Sequence ((Assignment ((Identifier y), (BinaryOperation (+, (Derefence ((Identifier y))), (Integer 1))))), (While ((BinaryOperation (>, (Derefence ((Identifier x))), (Derefence ((Identifier y))))), (Sequence ((Assignment ((Identifier x), (BinaryOperation (-, (Derefence ((Identifier x))), (Integer 1))))), (Assignment ((Identifier y), (BinaryOperation (+, (Derefence ((Identifier y))), (Integer 1))))))))))); (Derefence ((Identifier y)))}
+{E-Seq-Step  (While ((BinaryOperation (>, (Derefence ((Identifier x))), (Derefence ((Identifier y))))), (Sequence ((Assignment ((Identifier x), (BinaryOperation (-, (Derefence ((Identifier x))), (Integer 1))))), (Assignment ((Identifier y), (BinaryOperation (+, (Derefence ((Identifier y))), (Integer 1))))))))); (Derefence ((Identifier y)))}
+{E-Seq-Step  (Conditional ((BinaryOperation (>, (Derefence ((Identifier x))), (Derefence ((Identifier y))))), (Sequence ((Sequence ((Assignment ((Identifier x), (BinaryOperation (-, (Derefence ((Identifier x))), (Integer 1))))), (Assignment ((Identifier y), (BinaryOperation (+, (Derefence ((Identifier y))), (Integer 1))))))), (While ((BinaryOperation (>, (Derefence ((Identifier x))), (Derefence ((Identifier y))))), (Sequence ((Assignment ((Identifier x), (BinaryOperation (-, (Derefence ((Identifier x))), (Integer 1))))), (Assignment ((Identifier y), (BinaryOperation (+, (Derefence ((Identifier y))), (Integer 1))))))))))), ())); (Derefence ((Identifier y)))}
+{E-Seq-Step  (Sequence ((Sequence ((Assignment ((Identifier x), (BinaryOperation (-, (Derefence ((Identifier x))), (Integer 1))))), (Assignment ((Identifier y), (BinaryOperation (+, (Derefence ((Identifier y))), (Integer 1))))))), (While ((BinaryOperation (>, (Derefence ((Identifier x))), (Derefence ((Identifier y))))), (Sequence ((Assignment ((Identifier x), (BinaryOperation (-, (Derefence ((Identifier x))), (Integer 1))))), (Assignment ((Identifier y), (BinaryOperation (+, (Derefence ((Identifier y))), (Integer 1))))))))))); (Derefence ((Identifier y)))}
+{E-Seq-Step  (Sequence ((Assignment ((Identifier y), (BinaryOperation (+, (Derefence ((Identifier y))), (Integer 1))))), (While ((BinaryOperation (>, (Derefence ((Identifier x))), (Derefence ((Identifier y))))), (Sequence ((Assignment ((Identifier x), (BinaryOperation (-, (Derefence ((Identifier x))), (Integer 1))))), (Assignment ((Identifier y), (BinaryOperation (+, (Derefence ((Identifier y))), (Integer 1))))))))))); (Derefence ((Identifier y)))}
+{E-Seq-Step  (While ((BinaryOperation (>, (Derefence ((Identifier x))), (Derefence ((Identifier y))))), (Sequence ((Assignment ((Identifier x), (BinaryOperation (-, (Derefence ((Identifier x))), (Integer 1))))), (Assignment ((Identifier y), (BinaryOperation (+, (Derefence ((Identifier y))), (Integer 1))))))))); (Derefence ((Identifier y)))}
+{E-Seq-Step  (Conditional ((BinaryOperation (>, (Derefence ((Identifier x))), (Derefence ((Identifier y))))), (Sequence ((Sequence ((Assignment ((Identifier x), (BinaryOperation (-, (Derefence ((Identifier x))), (Integer 1))))), (Assignment ((Identifier y), (BinaryOperation (+, (Derefence ((Identifier y))), (Integer 1))))))), (While ((BinaryOperation (>, (Derefence ((Identifier x))), (Derefence ((Identifier y))))), (Sequence ((Assignment ((Identifier x), (BinaryOperation (-, (Derefence ((Identifier x))), (Integer 1))))), (Assignment ((Identifier y), (BinaryOperation (+, (Derefence ((Identifier y))), (Integer 1))))))))))), ())); (Derefence ((Identifier y)))}
+{E-Seq-Step  (Sequence ((Sequence ((Assignment ((Identifier x), (BinaryOperation (-, (Derefence ((Identifier x))), (Integer 1))))), (Assignment ((Identifier y), (BinaryOperation (+, (Derefence ((Identifier y))), (Integer 1))))))), (While ((BinaryOperation (>, (Derefence ((Identifier x))), (Derefence ((Identifier y))))), (Sequence ((Assignment ((Identifier x), (BinaryOperation (-, (Derefence ((Identifier x))), (Integer 1))))), (Assignment ((Identifier y), (BinaryOperation (+, (Derefence ((Identifier y))), (Integer 1))))))))))); (Derefence ((Identifier y)))}
+{E-Seq-Step  (Sequence ((Assignment ((Identifier y), (BinaryOperation (+, (Derefence ((Identifier y))), (Integer 1))))), (While ((BinaryOperation (>, (Derefence ((Identifier x))), (Derefence ((Identifier y))))), (Sequence ((Assignment ((Identifier x), (BinaryOperation (-, (Derefence ((Identifier x))), (Integer 1))))), (Assignment ((Identifier y), (BinaryOperation (+, (Derefence ((Identifier y))), (Integer 1))))))))))); (Derefence ((Identifier y)))}
+{E-Seq-Step  (While ((BinaryOperation (>, (Derefence ((Identifier x))), (Derefence ((Identifier y))))), (Sequence ((Assignment ((Identifier x), (BinaryOperation (-, (Derefence ((Identifier x))), (Integer 1))))), (Assignment ((Identifier y), (BinaryOperation (+, (Derefence ((Identifier y))), (Integer 1))))))))); (Derefence ((Identifier y)))}
+{E-Seq-Step  (Conditional ((BinaryOperation (>, (Derefence ((Identifier x))), (Derefence ((Identifier y))))), (Sequence ((Sequence ((Assignment ((Identifier x), (BinaryOperation (-, (Derefence ((Identifier x))), (Integer 1))))), (Assignment ((Identifier y), (BinaryOperation (+, (Derefence ((Identifier y))), (Integer 1))))))), (While ((BinaryOperation (>, (Derefence ((Identifier x))), (Derefence ((Identifier y))))), (Sequence ((Assignment ((Identifier x), (BinaryOperation (-, (Derefence ((Identifier x))), (Integer 1))))), (Assignment ((Identifier y), (BinaryOperation (+, (Derefence ((Identifier y))), (Integer 1))))))))))), ())); (Derefence ((Identifier y)))}
+{E-Seq-Step  (); (Derefence ((Identifier y)))}
+{E-Seq  (); ... → (Derefence ((Identifier y)))}
+{E-Deref  !ℓ1 → 5}
+
+------------------------------------------
+(ℓ0: 5) (ℓ1: 5) 
+------------------------------------------
+
+Teste 2
+------------------------------------------
+(Let (dividendo, int, (Integer 10), (Let (divisor, int, (Integer 3), (Let (resto, ref int, (New ((Identifier dividendo))), (Sequence ((While ((BinaryOperation (>=, (Derefence ((Identifier resto))), (Identifier divisor))), (Assignment ((Identifier resto), (BinaryOperation (-, (Derefence ((Identifier resto))), (Identifier divisor))))))), (Derefence ((Identifier resto)))))))))))
+let dividendo : int =
+  10
+in
+  let divisor : int =
+    3
+  in
+    let resto : ref int =
+      new
+        dividendo
+    in
+      (
+        while
+          (
+            !resto
+            >=
+            divisor
+          )
+        do
+          resto := (
+  !resto
+  -
+  divisor
+);
+        !resto
+      )
+------------------------------------------
+ : int
+[T-Int T  ⊢ '(Integer 10)' : Int]
+[T-Int T (dividendo: int)  ⊢ '(Integer 3)' : Int]
+[T-Var Γ('dividendo') : int (divisor: int) (dividendo: int)  ⊢ '(Identifier dividendo)' : int]
+[T-New (divisor: int) (dividendo: int)  ⊢ '(Identifier dividendo)' : int (divisor: int) (dividendo: int)  ⊢ '(Identifier dividendo)' : ref int]
+[T-Var Γ('resto') : ref int (resto: ref int) (divisor: int) (dividendo: int)  ⊢ '(Identifier resto)' : ref int]
+[T-Deref (resto: ref int) (divisor: int) (dividendo: int)  ⊢ '(Identifier resto)' : int (resto: ref int) (divisor: int) (dividendo: int)  ⊢ '(Identifier resto)' : int]
+[T-Var Γ('divisor') : int (resto: ref int) (divisor: int) (dividendo: int)  ⊢ '(Identifier divisor)' : int]
+[T-Op>= (resto: ref int) (divisor: int) (dividendo: int)  ⊢ '(Derefence ((Identifier resto)))' : Int ∧ '(Identifier divisor)' : Int (resto: ref int) (divisor: int) (dividendo: int)  ⊢ '(BinaryOperation (>=, (Derefence ((Identifier resto))), (Identifier divisor)))' : Bool]
+[T-Var Γ('resto') : ref int (resto: ref int) (divisor: int) (dividendo: int)  ⊢ '(Identifier resto)' : ref int]
+[T-Var Γ('resto') : ref int (resto: ref int) (divisor: int) (dividendo: int)  ⊢ '(Identifier resto)' : ref int]
+[T-Deref (resto: ref int) (divisor: int) (dividendo: int)  ⊢ '(Identifier resto)' : int (resto: ref int) (divisor: int) (dividendo: int)  ⊢ '(Identifier resto)' : int]
+[T-Var Γ('divisor') : int (resto: ref int) (divisor: int) (dividendo: int)  ⊢ '(Identifier divisor)' : int]
+[T-Op- (resto: ref int) (divisor: int) (dividendo: int)  ⊢ '(Derefence ((Identifier resto)))' : Int ∧ '(Identifier divisor)' : Int (resto: ref int) (divisor: int) (dividendo: int)  ⊢ '(BinaryOperation (-, (Derefence ((Identifier resto))), (Identifier divisor)))' : Int]
+[T-Atr (resto: ref int) (divisor: int) (dividendo: int)  ⊢ '(Identifier resto)' : int ∧ '(BinaryOperation (-, (Derefence ((Identifier resto))), (Identifier divisor)))' : int (resto: ref int) (divisor: int) (dividendo: int)  ⊢ '(Assignment ((Identifier resto), (BinaryOperation (-, (Derefence ((Identifier resto))), (Identifier divisor)))))' : Unit]
+[T-While (resto: ref int) (divisor: int) (dividendo: int)  ⊢ '(BinaryOperation (>=, (Derefence ((Identifier resto))), (Identifier divisor)))' : Bool ∧ '(Assignment ((Identifier resto), (BinaryOperation (-, (Derefence ((Identifier resto))), (Identifier divisor)))))' : Unit (resto: ref int) (divisor: int) (dividendo: int)  ⊢ '(While ((BinaryOperation (>=, (Derefence ((Identifier resto))), (Identifier divisor))), (Assignment ((Identifier resto), (BinaryOperation (-, (Derefence ((Identifier resto))), (Identifier divisor)))))))' : Unit]
+[T-Var Γ('resto') : ref int (resto: ref int) (divisor: int) (dividendo: int)  ⊢ '(Identifier resto)' : ref int]
+[T-Deref (resto: ref int) (divisor: int) (dividendo: int)  ⊢ '(Identifier resto)' : int (resto: ref int) (divisor: int) (dividendo: int)  ⊢ '(Identifier resto)' : int]
+[T-Sequence (resto: ref int) (divisor: int) (dividendo: int)  ⊢ '(While ((BinaryOperation (>=, (Derefence ((Identifier resto))), (Identifier divisor))), (Assignment ((Identifier resto), (BinaryOperation (-, (Derefence ((Identifier resto))), (Identifier divisor)))))))' : Unit ∧ '(Derefence ((Identifier resto)))' : int (resto: ref int) (divisor: int) (dividendo: int)  ⊢ '(Sequence ((While ((BinaryOperation (>=, (Derefence ((Identifier resto))), (Identifier divisor))), (Assignment ((Identifier resto), (BinaryOperation (-, (Derefence ((Identifier resto))), (Identifier divisor))))))), (Derefence ((Identifier resto)))))' : int]
+[T-Let (resto: ref int) (divisor: int) (dividendo: int)  ⊢ '(New ((Identifier dividendo)))' : ref int ∧ '(Sequence ((While ((BinaryOperation (>=, (Derefence ((Identifier resto))), (Identifier divisor))), (Assignment ((Identifier resto), (BinaryOperation (-, (Derefence ((Identifier resto))), (Identifier divisor))))))), (Derefence ((Identifier resto)))))' : int (resto: ref int) (divisor: int) (dividendo: int)  ⊢ '(Let (resto, ref int, (New ((Identifier dividendo))), (Sequence ((While ((BinaryOperation (>=, (Derefence ((Identifier resto))), (Identifier divisor))), (Assignment ((Identifier resto), (BinaryOperation (-, (Derefence ((Identifier resto))), (Identifier divisor))))))), (Derefence ((Identifier resto)))))))' : int]
+[T-Let (divisor: int) (dividendo: int)  ⊢ '(Integer 3)' : int ∧ '(Let (resto, ref int, (New ((Identifier dividendo))), (Sequence ((While ((BinaryOperation (>=, (Derefence ((Identifier resto))), (Identifier divisor))), (Assignment ((Identifier resto), (BinaryOperation (-, (Derefence ((Identifier resto))), (Identifier divisor))))))), (Derefence ((Identifier resto)))))))' : int (divisor: int) (dividendo: int)  ⊢ '(Let (divisor, int, (Integer 3), (Let (resto, ref int, (New ((Identifier dividendo))), (Sequence ((While ((BinaryOperation (>=, (Derefence ((Identifier resto))), (Identifier divisor))), (Assignment ((Identifier resto), (BinaryOperation (-, (Derefence ((Identifier resto))), (Identifier divisor))))))), (Derefence ((Identifier resto)))))))))' : int]
+[T-Let (dividendo: int)  ⊢ '(Integer 10)' : int ∧ '(Let (divisor, int, (Integer 3), (Let (resto, ref int, (New ((Identifier dividendo))), (Sequence ((While ((BinaryOperation (>=, (Derefence ((Identifier resto))), (Identifier divisor))), (Assignment ((Identifier resto), (BinaryOperation (-, (Derefence ((Identifier resto))), (Identifier divisor))))))), (Derefence ((Identifier resto)))))))))' : int (dividendo: int)  ⊢ '(Let (dividendo, int, (Integer 10), (Let (divisor, int, (Integer 3), (Let (resto, ref int, (New ((Identifier dividendo))), (Sequence ((While ((BinaryOperation (>=, (Derefence ((Identifier resto))), (Identifier divisor))), (Assignment ((Identifier resto), (BinaryOperation (-, (Derefence ((Identifier resto))), (Identifier divisor))))))), (Derefence ((Identifier resto)))))))))))' : int]
+
+------------------------------------------
+ = 1
+{E-Let-Subst  let dividendo = 10 in ...}
+{E-Let-Subst  let divisor = 3 in ...}
+{E-Let-Ref  let resto = ℓ0 in ...}
+{E-Seq-Step  (Conditional ((BinaryOperation (>=, (Derefence ((Identifier resto))), (Integer 3))), (Sequence ((Assignment ((Identifier resto), (BinaryOperation (-, (Derefence ((Identifier resto))), (Integer 3))))), (While ((BinaryOperation (>=, (Derefence ((Identifier resto))), (Integer 3))), (Assignment ((Identifier resto), (BinaryOperation (-, (Derefence ((Identifier resto))), (Integer 3))))))))), ())); (Derefence ((Identifier resto)))}
+{E-Seq-Step  (Sequence ((Assignment ((Identifier resto), (BinaryOperation (-, (Derefence ((Identifier resto))), (Integer 3))))), (While ((BinaryOperation (>=, (Derefence ((Identifier resto))), (Integer 3))), (Assignment ((Identifier resto), (BinaryOperation (-, (Derefence ((Identifier resto))), (Integer 3))))))))); (Derefence ((Identifier resto)))}
+{E-Seq-Step  (While ((BinaryOperation (>=, (Derefence ((Identifier resto))), (Integer 3))), (Assignment ((Identifier resto), (BinaryOperation (-, (Derefence ((Identifier resto))), (Integer 3))))))); (Derefence ((Identifier resto)))}
+{E-Seq-Step  (Conditional ((BinaryOperation (>=, (Derefence ((Identifier resto))), (Integer 3))), (Sequence ((Assignment ((Identifier resto), (BinaryOperation (-, (Derefence ((Identifier resto))), (Integer 3))))), (While ((BinaryOperation (>=, (Derefence ((Identifier resto))), (Integer 3))), (Assignment ((Identifier resto), (BinaryOperation (-, (Derefence ((Identifier resto))), (Integer 3))))))))), ())); (Derefence ((Identifier resto)))}
+{E-Seq-Step  (Sequence ((Assignment ((Identifier resto), (BinaryOperation (-, (Derefence ((Identifier resto))), (Integer 3))))), (While ((BinaryOperation (>=, (Derefence ((Identifier resto))), (Integer 3))), (Assignment ((Identifier resto), (BinaryOperation (-, (Derefence ((Identifier resto))), (Integer 3))))))))); (Derefence ((Identifier resto)))}
+{E-Seq-Step  (While ((BinaryOperation (>=, (Derefence ((Identifier resto))), (Integer 3))), (Assignment ((Identifier resto), (BinaryOperation (-, (Derefence ((Identifier resto))), (Integer 3))))))); (Derefence ((Identifier resto)))}
+{E-Seq-Step  (Conditional ((BinaryOperation (>=, (Derefence ((Identifier resto))), (Integer 3))), (Sequence ((Assignment ((Identifier resto), (BinaryOperation (-, (Derefence ((Identifier resto))), (Integer 3))))), (While ((BinaryOperation (>=, (Derefence ((Identifier resto))), (Integer 3))), (Assignment ((Identifier resto), (BinaryOperation (-, (Derefence ((Identifier resto))), (Integer 3))))))))), ())); (Derefence ((Identifier resto)))}
+{E-Seq-Step  (Sequence ((Assignment ((Identifier resto), (BinaryOperation (-, (Derefence ((Identifier resto))), (Integer 3))))), (While ((BinaryOperation (>=, (Derefence ((Identifier resto))), (Integer 3))), (Assignment ((Identifier resto), (BinaryOperation (-, (Derefence ((Identifier resto))), (Integer 3))))))))); (Derefence ((Identifier resto)))}
+{E-Seq-Step  (While ((BinaryOperation (>=, (Derefence ((Identifier resto))), (Integer 3))), (Assignment ((Identifier resto), (BinaryOperation (-, (Derefence ((Identifier resto))), (Integer 3))))))); (Derefence ((Identifier resto)))}
+{E-Seq-Step  (Conditional ((BinaryOperation (>=, (Derefence ((Identifier resto))), (Integer 3))), (Sequence ((Assignment ((Identifier resto), (BinaryOperation (-, (Derefence ((Identifier resto))), (Integer 3))))), (While ((BinaryOperation (>=, (Derefence ((Identifier resto))), (Integer 3))), (Assignment ((Identifier resto), (BinaryOperation (-, (Derefence ((Identifier resto))), (Integer 3))))))))), ())); (Derefence ((Identifier resto)))}
+{E-Seq-Step  (); (Derefence ((Identifier resto)))}
+{E-Seq  (); ... → (Derefence ((Identifier resto)))}
+{E-Deref  !ℓ0 → 1}
+
+------------------------------------------
+(ℓ0: 1) 
+------------------------------------------
+

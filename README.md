@@ -79,3 +79,101 @@ let () =
 onde `testes` deve ser uma lista de termos.
 
 ---
+
+##  Instruções
+### Definir um novo termo
+Armado com a sintaxe de termos em `docs/termos.md` e `src/Terms.ml`. Abaixo, implementaremos um termo diretamente e uma função que, dados dois inteiros, produz um termo de $L_2$.
+
+```ocaml
+(** em `src/Testing.ml` *)
+
+(**
+  let x : int = 10 in
+  let y : int = 0 in 
+    (while ( x > y ) do
+      x := !x - 1;
+      y := !y + 1
+    );
+    
+    !y)
+*)
+let counter : term = 
+  Let ("x", Int, Integer 10,
+    Let ("y", Int, Integer 0,
+      Sequence (
+        While (
+          BinaryOperation (Gt, Dereference (Identifier "x"), Dereference (Identifier "y")),
+          Sequence (
+            Assignment (Identifier "x", 
+              BinaryOperation (Sub, Dereference (Identifier "x"), Integer 1)),
+            Assignment (Identifier "y",
+              BinaryOperation (Add, Dereference (Identifier "y"), Integer 1))
+          )
+        ),
+        Dereference (Identifier "y")
+      )
+    )
+  )
+
+(**
+  let dividendo : Int = a in
+  let divisor   : Int = b in
+  let resto     : Int Ref = dividendo in
+    (while ( resto >= divisor ) do
+      resto := !resto - divisor
+    );
+    !resto
+*)
+let modulo (a: int) (b: int) : term =
+  Let ("dividendo", Int, a,
+    Let ("divisor", Int, b,
+      Let ("resto", Reference Int, New (Identifier "dividendo"),
+        Sequence (
+          While (
+            BinaryOperation (Geq, Dereference (Identifier "resto"), Identifier "divisor"),
+            Assignment (
+              Identifier "resto",
+              BinaryOperation (Sub, 
+                Dereference (Identifier "resto"), 
+                Identifier "divisor"
+              )
+            )
+          ),
+          Dereference (Identifier "resto")
+        )
+      )
+    )
+  )
+```
+
+### Executar o interpretador
+Agora podemos definir uma lista de testes
+
+```ml
+(* em `src/Testing.ml` *)
+
+
+(** testes para avaliação e inferência de tipos *)
+let testes = [
+  counter;
+  modulo (Integer 10) (Integer 3);
+] in ...
+```
+
+e chamá-la em nosso interpretador, para que este imprima os resultados da **inferência estática de tipo** e da **avaliação** dos nossos termos testes.
+
+```ocaml
+(* em `src/main.ml` *)
+
+let () =                            
+  List.iteri
+    (fun i e ->
+        print_endline ("Teste " ^ string_of_int (i + 1));
+        interpret e;
+        print_endline "")
+    testes
+```
+
+a interpretação pode ser visualizada em `results.txt`.
+
+---

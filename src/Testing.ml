@@ -188,6 +188,64 @@ let pow a b =
       Dereference (Identifier "acc")
     ))))
 
+(**
+  let x : int = 10 in
+  let y : int = 0 in 
+    (while ( x > y ) do
+      x := !x - 1;
+      y := !y + 1
+    );
+    
+    !y)
+*)
+let counter : term = 
+  Let ("x", Reference Int, New (Integer 10),  (* x é ref int *)
+    Let ("y", Reference Int, New (Integer 0),  (* y é ref int *)
+      Sequence (
+        While (
+          BinaryOperation (Gt, Dereference (Identifier "x"), Dereference (Identifier "y")),
+          Sequence (
+            Assignment (Identifier "x", 
+              BinaryOperation (Sub, Dereference (Identifier "x"), Integer 1)),
+            Assignment (Identifier "y",
+              BinaryOperation (Add, Dereference (Identifier "y"), Integer 1))
+          )
+        ),
+        Dereference (Identifier "y")
+      )
+    )
+  )
+
+(**
+  let dividendo : Int = a in
+  let divisor   : Int = b in
+  let resto     : Int Ref = dividendo in
+    (while ( resto >= divisor ) do
+      resto := !resto - divisor
+    );
+    !resto
+*)
+let modulo (a: int) (b: int) : term = 
+  Let ("dividendo", Int, Integer a,
+    Let ("divisor", Int, Integer b,
+      Let ("resto", Reference Int, New (Identifier "dividendo"),
+        Sequence (
+          While (
+            BinaryOperation (Geq, Dereference (Identifier "resto"), Identifier "divisor"),
+            Assignment (
+              Identifier "resto",
+              BinaryOperation (Sub, 
+                Dereference (Identifier "resto"), 
+                Identifier "divisor"
+              )
+            )
+          ),
+          Dereference (Identifier "resto")
+        )
+      )
+    )
+  )
+
 let a_tests = [
   fatorial 5;
   gcd_term 30 18;   (* gcd(30,18) = 6 *)
@@ -200,7 +258,4 @@ let a_tests = [
 ]
 
 let all_tests =
-  values_tests @
-  if_tests @
-  binop_tests @
-  a_tests
+  [counter ; modulo 10 3]
