@@ -172,7 +172,7 @@ A expressão condicional exige que:
 
 A regra formal é:
 
-\[
+$$
 \frac{
   \Gamma \vdash e_1 : \text{Bool}
   \qquad
@@ -183,20 +183,18 @@ A regra formal é:
   \Gamma \vdash \text{if } e_1 \text{ then } e_2 \text{ else } e_3 : T
 }
 \quad (\text{T-If})
-\]
+$$
 
 Se $e_1$ não for booleano, ou se $e_2$ e $e_3$ tiverem tipos distintos, então a expressão não tem tipo válido.
 
 ### Avaliação
-A avaliação do condicional funciona assim:
-
 - Primeiro reduzimos a condição $e_1$, caso ela ainda não seja um valor.
 - Se $e_1$ reduz para $\texttt{true}$, escolhemos o ramo $e_2$.
 - Se $e_1$ reduz para $\texttt{false}$, escolhemos o ramo $e_3$.
 
 As regras formais são as seguintes:
 
-\[
+$$
 \frac{
   e_1 \to e_1'
 }{
@@ -205,25 +203,21 @@ As regras formais são as seguintes:
   \text{if } e_1' \text{ then } e_2 \text{ else } e_3
 }
 \quad(\text{E-IfStep})
-\]
 
-\[
 \frac{}{
   \text{if true then } e_2 \text{ else } e_3
   \;\to\;
   e_2
 }
 \quad(\text{E-IfTrue})
-\]
 
-\[
 \frac{}{
   \text{if false then } e_2 \text{ else } e_3
   \;\to\;
   e_3
 }
 \quad(\text{E-IfFalse})
-\]
+$$
 
 O condicional avalia primeiro a condição.  
 Se ela for verdadeira, retorna o ramo $\texttt{then}$.  
@@ -244,7 +238,7 @@ Dividimos em três classes:
    - Ambos os operandos devem ser do tipo `Int`
    - O resultado é `Int`
 
-\[
+$$
 \frac{
   \Gamma \vdash e_1 : \text{Int}
   \qquad
@@ -253,13 +247,13 @@ Dividimos em três classes:
   \Gamma \vdash e_1 \;\text{op}\; e_2 : \text{Int}
 }
 \quad(\text{T-BinOp \ \{+, -, *, /, mod\}})
-\]
+$$
 
 2. **Operadores booleanos:** `and`, `or`  
    - Ambos os operandos devem ser `Bool`
    - O resultado é `Bool`
 
-\[
+$$
 \frac{
   \Gamma \vdash e_1 : \text{Bool}
   \qquad
@@ -268,13 +262,13 @@ Dividimos em três classes:
   \Gamma \vdash e_1 \;\text{op}\; e_2 : \text{Bool}
 }
 \quad(\text{T-BinOp \ \{and, or\}})
-\]
+$$
 
 3. **Operadores relacionais:** `=`, `<>`, `<`, `<=`, `>`, `>=`  
    - Ambos os operandos devem ser `Int`
    - O resultado é `Bool`
 
-\[
+$$
 \frac{
   \Gamma \vdash e_1 : \text{Int}
   \qquad
@@ -283,7 +277,7 @@ Dividimos em três classes:
   \Gamma \vdash e_1 \;\text{op}\; e_2 : \text{Bool}
 }
 \quad(\text{T-BinOp \ \{=, <>, <, <=, >, >=\}})
-\]
+$$
 
 Também é possível comparar booleanos com `==` e `<>`.
 
@@ -301,7 +295,7 @@ A avaliação segue a ordem esquerda–direita:
 
 As regras formais são:
 
-\[
+$$
 \frac{
   e_1 \to e_1'
 }{
@@ -310,9 +304,9 @@ As regras formais são:
   \text{op}(e_1', e_2)
 }
 \quad(\text{E-BinOp 1})
-\]
+$$
 
-\[
+$$
 \frac{
   e_2 \to e_2'
 }{
@@ -321,16 +315,16 @@ As regras formais são:
   \text{op}(v_1, e_2')
 }
 \quad(\text{E-BinOp 2})
-\]
+$$
 
 E quando ambos os operandos são valores:
 
-\[
+$$
 \frac{}{
   \text{op}(v_1, v_2) \;\to\; v
 }
 \quad(\text{E-BinOp})
-\]
+$$
 
 onde `v` é o resultado da computação real do operador sobre os valores `v₁` e `v₂`, por exemplo:
 
@@ -356,7 +350,7 @@ Para que a atribuição seja válida:
 
 A regra formal é:
 
-\[
+$$
 \frac{
   \Gamma \vdash x : \text{Ref}\;T
   \qquad
@@ -365,7 +359,7 @@ A regra formal é:
   \Gamma \vdash x := e : \text{Unit}
 }
 \quad(\text{T-Atr})
-\]
+$$
 
 Se `x` não for uma referência, ou `e` não tiver o tipo apontado por `x`, a atribuição é inválida.
 
@@ -382,34 +376,34 @@ Regras formais:
 
 Avaliar o lado esquerdo:
 
-\[
+$$
 \frac{
   x \to x'
 }{
   x := e \;\to\; x' := e
 }
 \quad(\text{E-Atr})
-\]
+$$
 
 Avaliar o lado direito:
 
-\[
+$$
 \frac{
   e \to e'
 }{
   l := e \;\to\; l := e'
 }
 \quad(\text{E-Atr})
-\]
+$$
 
 Quando ambos lados são valores:
 
-\[
+$$
 \frac{}{
   l := v \;\to\; \text{store}(l \mapsto v);\; \text{VUnit}
 }
 \quad(\text{E-Atr})
-\]
+$$
 
 A atribuição **muda a memória** e é avalia para **valor** `VUnit`.
 
@@ -427,7 +421,7 @@ Para um `while` ser bem tipado:
 - o corpo `e2` deve ter tipo `Unit`;
 - o tipo da expressão inteira é `Unit`.
 
-\[
+$$
 \frac{
   \Gamma \vdash e_1 : \text{Bool}
   \qquad
@@ -436,17 +430,17 @@ Para um `while` ser bem tipado:
   \Gamma \vdash \text{while } e_1 \text{ do } e_2 : \text{Unit}
 }
 \quad(\text{T-While})
-\]
+$$
 
 ### Avaliação
 
 Um `while` é açúcar sintático para:
 
-\[
+$$
 \text{while } e_1 \text{ do } e_2
 \quad\equiv\quad
 \text{if } e_1 \text{ then } (e_2 ; \text{while } e_1 \text{ do } e_2) \text{ else Unit}
-\]
+$$
 
 A avaliação segue a mesma estratégia:
 
@@ -458,7 +452,7 @@ Regras formais:
 
 Passo sobre a condição:
 
-\[
+$$
 \frac{
   e_1 \to e_1'
 }{
@@ -467,29 +461,29 @@ Passo sobre a condição:
   \text{while } e_1' \text{ do } e_2
 }
 \quad(\text{E-While Step})
-\]
+$$
 
 Caso verdadeiro:
 
-\[
+$$
 \frac{}{
   \text{while true do } e_2
   \;\to\;
   e_2;\;\text{while true do } e_2
 }
 \quad(\text{E-While True})
-\]
+$$
 
 Caso falso:
 
-\[
+$$
 \frac{}{
   \text{while false do } e_2
   \;\to\;
   \text{Unit}
 }
 \quad(\text{E-While False})
-\]
+$$
 
 Assim como em linguagens imperativas reais, o laço `while` produz sempre `Unit` — ele serve apenas para efeitos colaterais na memória.
 
@@ -509,16 +503,14 @@ Para uma sequência ser bem tipada:
 
 Regra formal:
 
-\[
-\frac{
+$$\frac{
   \Gamma \vdash e_1 : \text{Unit}
   \qquad
   \Gamma \vdash e_2 : T
 }{
   \Gamma \vdash e_1 ; e_2 : T
 }
-\quad(\text{T-Sequence})
-\]
+\quad(\text{T-Sequence})$$
 
 A restrição de que `e1` deve ser `Unit` garante que apenas comandos com efeitos colaterais (como atribuições, loops, etc.) possam aparecer na primeira posição. Valores como inteiros ou booleanos não são permitidos.
 
@@ -532,23 +524,23 @@ A avaliação segue a ordem estrita da esquerda para direita:
 Regras formais:
 
 Avaliar o primeiro comando:
-\[
+$$
 \frac{
   e_1 \to e_1'
 }{
   e_1 ; e_2 \;\to\; e_1' ; e_2
 }
 \quad(\text{E-Seq Step})
-\]
+$$
 
 Quando o primeiro comando é `Unit`:
-\[
+$$
 \frac{
 }{
   \text{Unit} ; e_2 \;\to\; e_2
 }
 \quad(\text{E-Seq})
-\]
+$$
 
 Se `e1` avaliar para um valor diferente de `Unit`, ocorre erro de tipo em tempo de execução.
 
