@@ -208,7 +208,7 @@ $$
 $$
 \frac{}{
   \text{if true then } e_2 \text{ else } e_3
-  \;\to\;
+  \ \to \
   e_2
 }
 \quad(\text{E-IfTrue})
@@ -217,7 +217,7 @@ $$
 $$
 \frac{}{
   \text{if false then } e_2 \text{ else } e_3
-  \;\to\;
+  \ \to \
   e_3
 }
 \quad(\text{E-IfFalse})
@@ -248,7 +248,7 @@ $$
   \qquad
   \Gamma \vdash e_2 : \text{Int}
 }{
-  \Gamma \vdash e_1 \;\text{op}\; e_2 : \text{Int}
+  \Gamma \vdash e_1 \ \text{op} \ e_2 : \text{Int}
 }
 \quad(\text{T-BinOp \ \{+, -, *, /, mod\}})
 $$
@@ -263,7 +263,7 @@ $$
   \qquad
   \Gamma \vdash e_2 : \text{Bool}
 }{
-  \Gamma \vdash e_1 \;\text{op}\; e_2 : \text{Bool}
+  \Gamma \vdash e_1 \ \text{op} \ e_2 : \text{Bool}
 }
 \quad(\text{T-BinOp \ \{and, or\}})
 $$
@@ -278,7 +278,7 @@ $$
   \qquad
   \Gamma \vdash e_2 : \text{Int}
 }{
-  \Gamma \vdash e_1 \;\text{op}\; e_2 : \text{Bool}
+  \Gamma \vdash e_1 \ \text{op} \ e_2 : \text{Bool}
 }
 \quad(\text{T-BinOp \ \{=, <>, <, <=, >, >=\}})
 $$
@@ -301,10 +301,10 @@ As regras formais são:
 
 $$
 \frac{
-  e_1 \to e_1'
+  e_1 \ \to \ e_1'
 }{
   \text{op}(e_1, e_2)
-  \;\to\;
+  \ \to \
   \text{op}(e_1', e_2)
 }
 \quad(\text{E-BinOp 1})
@@ -315,7 +315,7 @@ $$
   e_2 \to e_2'
 }{
   \text{op}(v_1, e_2)
-  \;\to\;
+  \ \to \
   \text{op}(v_1, e_2')
 }
 \quad(\text{E-BinOp 2})
@@ -325,7 +325,7 @@ E quando ambos os operandos são valores:
 
 $$
 \frac{}{
-  \text{op}(v_1, v_2) \;\to\; v
+  \text{op}(v_1, v_2) \ \to \ v
 }
 \quad(\text{E-BinOp})
 $$
@@ -384,7 +384,7 @@ $$
 \frac{
   x \to x'
 }{
-  x := e \;\to\; x' := e
+  x := e \ \to \ x' := e
 }
 \quad(\text{E-Atr})
 $$
@@ -395,7 +395,7 @@ $$
 \frac{
   e \to e'
 }{
-  l := e \;\to\; l := e'
+  l := e \ \to \ l := e'
 }
 \quad(\text{E-Atr})
 $$
@@ -404,7 +404,7 @@ Quando ambos lados são valores:
 
 $$
 \frac{}{
-  l := v \;\to\; \text{store}(l \mapsto v);\; \text{VUnit}
+  l := v \ \to \ \text{store}(l \mapsto v) \ \text{VUnit}
 }
 \quad(\text{E-Atr})
 $$
@@ -461,7 +461,7 @@ $$
   e_1 \to e_1'
 }{
   \text{while } e_1 \text{ do } e_2
-  \;\to\;
+  \ \to \
   \text{while } e_1' \text{ do } e_2
 }
 \quad(\text{E-While Step})
@@ -472,7 +472,7 @@ Caso verdadeiro:
 $$
 \frac{}{
   \text{while true do } e_2
-  \;\to\;
+  \ \to \
   e_2;\;\text{while true do } e_2
 }
 \quad(\text{E-While True})
@@ -483,7 +483,7 @@ Caso falso:
 $$
 \frac{}{
   \text{while false do } e_2
-  \;\to\;
+  \ \to \
   \text{Unit}
 }
 \quad(\text{E-While False})
@@ -532,7 +532,7 @@ $$
 \frac{
   e_1 \to e_1'
 }{
-  e_1 ; e_2 \;\to\; e_1' ; e_2
+  e_1 ; e_2 \ \to \ e_1' ; e_2
 }
 \quad(\text{E-Seq Step})
 $$
@@ -541,7 +541,7 @@ Quando o primeiro comando é `Unit`:
 $$
 \frac{
 }{
-  \text{Unit} ; e_2 \;\to\; e_2
+  \text{Unit} ; e_2 \ \to \ e_2
 }
 \quad(\text{E-Seq})
 $$
@@ -666,7 +666,7 @@ $$
   e \to e'
 }{
   \text{new } e
-  \;\to\;
+  \ \to \
   \text{new } e'
 }
 \quad(\text{E-New Step})
@@ -678,7 +678,7 @@ $$
 \frac{
     l \notin \text{Dom}( \sigma )
 }{
-    \text{new } e, \ \sigma \to \text{VLocation l}, \ \sigma [l \mapsto v]
+    \text{new } e, \ \sigma \ \to \ \text{VLocation l}, \ \sigma [l \mapsto v]
 }
 \quad(\text{E-New 1})
 $$
@@ -718,7 +718,7 @@ $$
   e \to e'
 }{
   \text{!}e
-  \;\to\;
+  \ \to \
   \text{!}e'
 }{\text{(E-Deref Step)}}
 $$
@@ -728,7 +728,7 @@ $$
   l \in \text{Dom}( \sigma ) \quad \land \quad \sigma(l) = v
 }{
   \text{!}\text{VLocation} ( l )
-  \;\to\;
+  \ \to \
   v
 }{\text{(E-Deref 1)}}
 $$
